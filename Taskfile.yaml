@@ -1,0 +1,31 @@
+version: '3'
+
+vars:
+  EXEC_FILE: './cmd/booklib'
+  OUTPUT: './bin/booklib/main'
+  DBNAME: booklib
+
+tasks:
+  build:
+    cmd: go build -o {{.OUTPUT}} {{.EXEC_FILE}}
+    silent: true
+
+  run:
+    deps:
+      - task: build
+    cmd: '{{.OUTPUT}}'
+    silent: true
+
+  db:
+    cmd: docker compose up db -d
+
+  docker-stop:
+    aliases: [ds]
+    cmd: docker compose stop
+
+  db-connect:
+    aliases: [dbc]
+    cmd: psql -U postgres -h {{.HOST}} -p {{.PORT}} -d {{.DBNAME}}
+    vars:
+      HOST: localhost
+      PORT: 5432
