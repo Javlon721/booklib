@@ -3,7 +3,9 @@ version: '3'
 vars:
   EXEC_FILE: './cmd/booklib'
   OUTPUT: './bin/booklib/main'
-  DBNAME: booklib
+  POSTGRES_URI: 'postgres://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB_NAME'
+
+dotenv: ['.env']
 
 tasks:
   build:
@@ -25,7 +27,12 @@ tasks:
 
   db-connect:
     aliases: [dbc]
-    cmd: psql -U postgres -h {{.HOST}} -p {{.PORT}} -d {{.DBNAME}}
+    cmd: psql "{{.POSTGRES_URI}}"
+
+  migration:
+    aliases: [mg]
+    cmds:
+      - 'goose postgres {{.POSTGRES_URI}} {{.CLI_ARGS}} -dir={{.WD}}'
     vars:
-      HOST: localhost
-      PORT: 5432
+      WD: '{{.USER_WORKING_DIR}}/migrations'
+    silent: true
