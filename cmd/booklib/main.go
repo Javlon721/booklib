@@ -1,14 +1,27 @@
 package main
 
 import (
-	"fmt"
+	"log/slog"
+	"os"
 	"time"
 
+	"github.com/Javlon721/booklib/internal/db/postgres"
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
 )
 
 func main() {
+	logger := slog.New(slog.Default().Handler())
+
+	if err := run(logger); err != nil {
+		logger.Error("startup", "err", err)
+		os.Exit(1)
+	}
+}
+
+func run(logger *slog.Logger) error {
+	logger.Info("startup")
+
 	conf := struct {
 		//Database
 		Postgres struct {
@@ -16,7 +29,6 @@ func main() {
 			Password string
 			User     string
 			Host     string
-			Port     string
 
 			MaxConns        int32         `envconfig:"MAX_CONNS"`
 			MinConns        int32         `envconfig:"MIN_CONNS"`
@@ -28,14 +40,24 @@ func main() {
 	err := godotenv.Load(".env")
 
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	err = envconfig.Process("", &conf)
 
 	if err != nil {
-		panic(err)
+		return err
 	}
 
-	fmt.Println(conf)
+	logger.Info("startup", "status", "initizlizing db connection", "hostport", conf.Postgres.Host)
+
+	dbConn, err := postgres.NewPool(postgres.Config(conf.Postgres))
+
+	if err != nil {
+		return err
+	}
+
+	_ = dbConn
+
+	return nil
 }
