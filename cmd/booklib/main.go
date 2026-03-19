@@ -5,9 +5,18 @@ import (
 	"os"
 	"time"
 
+	userbus "github.com/Javlon721/booklib/internal/bus/userBus"
+	userStore "github.com/Javlon721/booklib/internal/bus/userBus/store"
 	"github.com/Javlon721/booklib/internal/db/postgres"
+	userhandler "github.com/Javlon721/booklib/internal/handler/userHandler"
+	"github.com/Javlon721/booklib/internal/middleware"
+	"github.com/gofiber/fiber/v3"
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
+)
+
+var (
+	apiHost = ":8001"
 )
 
 func main() {
@@ -57,7 +66,30 @@ func run(logger *slog.Logger) error {
 		return err
 	}
 
-	_ = dbConn
+	logger.Info("startup", "status", "initizlizing handlers")
 
-	return nil
+	userStore := userStore.New(dbConn, logger)
+	userBus := userbus.NewBusiness(logger, userStore)
+	userHandler := userhandler.NewHandler(userBus, logger)
+
+	var config = fiber.Config{
+		ErrorHandler: func(c fiber.Ctx, err error) error {
+			if c.Response().StatusCode() >= 500 {
+				return c.JSON(map[string]string{"error": "internal server error"})
+			}
+
+			return c.JSON(map[string]string{"error": err.Error()})
+		},
+	}
+
+	logger.Info("startup", "status", "initizlizing fiber app")
+
+	app := fiber.New(config)
+	app.Use(middleware.Logger(logger))
+
+	appV1 := app.Group("/api/v1")
+
+	appV1.Post("/users", userHandler.Create)
+
+	return app.Listen(apiHost)
 }

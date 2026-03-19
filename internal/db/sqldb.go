@@ -23,3 +23,22 @@ type DB interface {
 	Query(context.Context, string, ...any) (pgx.Rows, error)
 	Exec(context.Context, string, ...any) (pgconn.CommandTag, error)
 }
+
+func ExtractPosgreErr(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	var pqerr *pgconn.PgError
+
+	if errors.As(err, &pqerr) {
+		switch pqerr.Code {
+		case undefinedTable:
+			return ErrUndefinedTable
+		case uniqueViolation:
+			return ErrDBDuplicatedEntry
+		}
+	}
+
+	return err
+}
