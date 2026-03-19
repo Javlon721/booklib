@@ -8,6 +8,7 @@ import (
 	userbus "github.com/Javlon721/booklib/internal/bus/userBus"
 	userStore "github.com/Javlon721/booklib/internal/bus/userBus/store"
 	"github.com/Javlon721/booklib/internal/db/postgres"
+	"github.com/Javlon721/booklib/internal/handler/errs"
 	userhandler "github.com/Javlon721/booklib/internal/handler/userHandler"
 	"github.com/Javlon721/booklib/internal/middleware"
 	"github.com/gofiber/fiber/v3"
@@ -70,11 +71,15 @@ func run(logger *slog.Logger) error {
 
 	var config = fiber.Config{
 		ErrorHandler: func(c fiber.Ctx, err error) error {
-			if c.Response().StatusCode() >= 500 {
-				return c.JSON(map[string]string{"error": "internal server error"})
+			e, ok := err.(*errs.Error)
+
+			if !ok || e.Code == errs.Internal {
+				c.SendStatus(errs.Internal.HTTPStatus())
+				return c.JSON(map[string]string{"error": errs.Internal.String()})
 			}
 
-			return c.JSON(map[string]string{"error": err.Error()})
+			c.SendStatus(e.HTTPStatus())
+			return c.JSON(map[string]string{"error": e.Message})
 		},
 	}
 

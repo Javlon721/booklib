@@ -2,11 +2,13 @@ package store
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 
 	userbus "github.com/Javlon721/booklib/internal/bus/userBus"
 	sqldb "github.com/Javlon721/booklib/internal/db"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
 
 type Store struct {
@@ -33,6 +35,9 @@ func (s Store) GetUserByID(ctx context.Context, userID uuid.UUID) (userbus.User,
 	row := s.db.QueryRow(ctx, q, userID)
 
 	if err := sqldb.ExtractPosgreErr(row.Scan(&dbUser.ID, &dbUser.FirstName, &dbUser.LastName, &dbUser.Email, &dbUser.PasswordHash, &dbUser.DateCreated, &dbUser.DateUpdated)); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return userbus.User{}, userbus.ErrUserNotFound
+		}
 		return userbus.User{}, err
 	}
 
@@ -54,6 +59,9 @@ func (s Store) Create(ctx context.Context, nu userbus.User) (uuid.UUID, error) {
 	row := s.db.QueryRow(ctx, q, dbUser.FirstName, dbUser.LastName, dbUser.Email, dbUser.PasswordHash, dbUser.DateCreated, dbUser.DateUpdated)
 
 	if err := sqldb.ExtractPosgreErr(row.Scan(&id)); err != nil {
+		if errors.Is(err, sqldb.ErrDBDuplicatedEntry) {
+			return id, userbus.ErrUserAlreadyExists
+		}
 		return id, err
 	}
 
