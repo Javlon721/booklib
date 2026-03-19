@@ -19,6 +19,7 @@ var (
 type Store interface {
 	Create(context.Context, User) (uuid.UUID, error)
 	GetUserByID(context.Context, uuid.UUID) (User, error)
+	GetUserByEmail(context.Context, string) (User, error)
 }
 
 type Business struct {
@@ -64,4 +65,8 @@ func (bus Business) Create(ctx context.Context, nu CreateUser) (User, error) {
 
 func (bus Business) GetUserByID(ctx context.Context, userID uuid.UUID) (User, error) {
 	return bus.store.GetUserByID(ctx, userID)
+}
+
+func (bus Business) GetUserByEmail(ctx context.Context, email string) (User, error) {
+	return bus.store.GetUserByEmail(ctx, email)
 }

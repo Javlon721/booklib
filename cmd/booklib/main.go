@@ -8,6 +8,7 @@ import (
 	userbus "github.com/Javlon721/booklib/internal/bus/userBus"
 	userStore "github.com/Javlon721/booklib/internal/bus/userBus/store"
 	"github.com/Javlon721/booklib/internal/db/postgres"
+	authhandler "github.com/Javlon721/booklib/internal/handler/authHandler"
 	userhandler "github.com/Javlon721/booklib/internal/handler/userHandler"
 	"github.com/Javlon721/booklib/internal/middleware"
 	"github.com/gofiber/fiber/v3"
@@ -101,6 +102,8 @@ func run(logger *slog.Logger) error {
 
 	userStore := userStore.New(dbConn, logger)
 	userBus := userbus.NewBusiness(logger, userStore)
+
+	authhandler.Routes(appV1, userBus, logger)
 	userhandler.Routes(appV1, userBus, logger)
 
 	return app.Listen(apiHost)
