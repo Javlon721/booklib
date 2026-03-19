@@ -12,6 +12,7 @@ import (
 
 type Store interface {
 	Create(context.Context, User) (uuid.UUID, error)
+	GetUserByID(context.Context, uuid.UUID) (User, error)
 }
 
 type Business struct {
@@ -53,4 +54,8 @@ func (bus Business) Create(ctx context.Context, nu CreateUser) (User, error) {
 	user.ID = id
 
 	return user, nil
+}
+
+func (bus Business) GetUserByID(ctx context.Context, userID uuid.UUID) (User, error) {
+	return bus.store.GetUserByID(ctx, userID)
 }

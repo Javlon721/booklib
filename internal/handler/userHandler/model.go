@@ -26,7 +26,7 @@ func toHandlerUser(u userbus.User) User {
 		ID:          u.ID.String(),
 		FirstName:   u.FirstName.String(),
 		LastName:    u.LastName.String(),
-		Email:       u.Email.String(),
+		Email:       u.Email.Address,
 		DateCreated: u.DateCreated.Format(time.RFC3339),
 		DateUpdated: u.DateUpdated.Format(time.RFC3339),
 	}

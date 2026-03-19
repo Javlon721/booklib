@@ -13,4 +13,5 @@ func Routes(mux fiber.Router, userBus *userbus.Business, logger *slog.Logger) {
 	userHandler := NewHandler(userBus, logger)
 
 	router.Post("/", userHandler.Create)
+	router.Get("/:userID", userHandler.GetUserByID)
 }

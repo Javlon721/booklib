@@ -21,8 +21,22 @@ func New(db sqldb.DB, logger *slog.Logger) *Store {
 	}
 }
 
-func (s Store) GetUserByID(ctx context.Context, userID uuid.UUID) {
+func (s Store) GetUserByID(ctx context.Context, userID uuid.UUID) (userbus.User, error) {
+	const q = `
+	SELECT user_id, first_name, last_name, email, hash_password, date_created, date_updated
+	FROM users 
+	WHERE user_id = $1
+	`
 
+	var dbUser userDB
+
+	row := s.db.QueryRow(ctx, q, userID)
+
+	if err := sqldb.ExtractPosgreErr(row.Scan(&dbUser.ID, &dbUser.FirstName, &dbUser.LastName, &dbUser.Email, &dbUser.PasswordHash, &dbUser.DateCreated, &dbUser.DateUpdated)); err != nil {
+		return userbus.User{}, err
+	}
+
+	return toBusUser(dbUser)
 }
 
 func (s Store) Create(ctx context.Context, nu userbus.User) (uuid.UUID, error) {

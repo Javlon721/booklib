@@ -1,11 +1,13 @@
 package userhandler
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 
 	userbus "github.com/Javlon721/booklib/internal/bus/userBus"
 	"github.com/gofiber/fiber/v3"
+	"github.com/google/uuid"
 )
 
 type Handler struct {
@@ -43,6 +45,24 @@ func (h Handler) Create(c fiber.Ctx) error {
 	}
 
 	c.SendStatus(http.StatusCreated)
+
+	return c.JSON(toHandlerUser(user))
+}
+
+func (h Handler) GetUserByID(c fiber.Ctx) error {
+	userID, err := uuid.Parse(c.Params("userID"))
+
+	if err != nil {
+		c.SendStatus(http.StatusBadRequest)
+		return fmt.Errorf("cannot parse userID: %w", err)
+	}
+
+	user, err := h.userBus.GetUserByID(c.Context(), userID)
+
+	if err != nil {
+		c.SendStatus(http.StatusInternalServerError)
+		return err
+	}
 
 	return c.JSON(toHandlerUser(user))
 }
