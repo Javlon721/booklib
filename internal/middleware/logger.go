@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/Javlon721/booklib/internal/handler/errs"
 	"github.com/gofiber/fiber/v3"
 )
 
@@ -19,6 +20,10 @@ func Logger(logger *slog.Logger) fiber.Handler {
 			responceStatusCode = c.Response().StatusCode()
 			ip                 = c.IP()
 		)
+
+		if e, ok := err.(*errs.Error); ok {
+			responceStatusCode = e.HTTPStatus()
+		}
 
 		logger.Info(fmt.Sprintf("request: %s %s %s %d %v", ip, method, path, responceStatusCode, time.Since(start)))
 

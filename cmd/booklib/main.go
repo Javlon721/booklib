@@ -8,7 +8,6 @@ import (
 	userbus "github.com/Javlon721/booklib/internal/bus/userBus"
 	userStore "github.com/Javlon721/booklib/internal/bus/userBus/store"
 	"github.com/Javlon721/booklib/internal/db/postgres"
-	"github.com/Javlon721/booklib/internal/handler/errs"
 	userhandler "github.com/Javlon721/booklib/internal/handler/userHandler"
 	"github.com/Javlon721/booklib/internal/middleware"
 	"github.com/gofiber/fiber/v3"
@@ -21,6 +20,9 @@ var (
 )
 
 func main() {
+	// -------------------------------------------------------------------------
+	// Initialize logger
+
 	logger := slog.New(slog.Default().Handler())
 
 	if err := run(logger); err != nil {
@@ -31,6 +33,9 @@ func main() {
 
 func run(logger *slog.Logger) error {
 	logger.Info("startup")
+
+	// -------------------------------------------------------------------------
+	// Initialize global config
 
 	conf := struct {
 		//Database
@@ -59,6 +64,9 @@ func run(logger *slog.Logger) error {
 		return err
 	}
 
+	// -------------------------------------------------------------------------
+	// Initialize postgres connection
+
 	logger.Info("startup", "status", "initizlizing db connection", "hostport", conf.Postgres.Host)
 
 	dbConn, err := postgres.NewPool(postgres.Config(conf.Postgres))
@@ -67,27 +75,27 @@ func run(logger *slog.Logger) error {
 		return err
 	}
 
+	// -------------------------------------------------------------------------
+	// Initialize fiber app
+
 	logger.Info("startup", "status", "initizlizing fiber app")
 
-	var config = fiber.Config{
-		ErrorHandler: func(c fiber.Ctx, err error) error {
-			e, ok := err.(*errs.Error)
-
-			if !ok || e.Code == errs.Internal {
-				c.SendStatus(errs.Internal.HTTPStatus())
-				return c.JSON(map[string]string{"error": errs.Internal.String()})
-			}
-
-			c.SendStatus(e.HTTPStatus())
-			return c.JSON(map[string]string{"error": e.Message})
-		},
-	}
+	var config = fiber.Config{ErrorHandler: middleware.Errors(logger)}
 
 	app := fiber.New(config)
 
+	// -------------------------------------------------------------------------
+	// Add middlewares
+
 	app.Use(middleware.Logger(logger))
 
+	// -------------------------------------------------------------------------
+	// Initialize API version: /api/v1
+
 	appV1 := app.Group("/api/v1")
+
+	// -------------------------------------------------------------------------
+	// Initialize Handlers
 
 	logger.Info("startup", "status", "initizlizing handlers")
 
