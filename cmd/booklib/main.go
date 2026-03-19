@@ -66,11 +66,7 @@ func run(logger *slog.Logger) error {
 		return err
 	}
 
-	logger.Info("startup", "status", "initizlizing handlers")
-
-	userStore := userStore.New(dbConn, logger)
-	userBus := userbus.NewBusiness(logger, userStore)
-	userHandler := userhandler.NewHandler(userBus, logger)
+	logger.Info("startup", "status", "initizlizing fiber app")
 
 	var config = fiber.Config{
 		ErrorHandler: func(c fiber.Ctx, err error) error {
@@ -82,14 +78,17 @@ func run(logger *slog.Logger) error {
 		},
 	}
 
-	logger.Info("startup", "status", "initizlizing fiber app")
-
 	app := fiber.New(config)
+
 	app.Use(middleware.Logger(logger))
 
 	appV1 := app.Group("/api/v1")
 
-	appV1.Post("/users", userHandler.Create)
+	logger.Info("startup", "status", "initizlizing handlers")
+
+	userStore := userStore.New(dbConn, logger)
+	userBus := userbus.NewBusiness(logger, userStore)
+	userhandler.Routes(appV1, userBus, logger)
 
 	return app.Listen(apiHost)
 }
