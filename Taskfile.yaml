@@ -36,3 +36,7 @@ tasks:
     vars:
       WD: '{{.USER_WORKING_DIR}}/migrations'
     silent: true
+  
+  tidy:
+    aliases: [td]
+    cmd: go mod tidy
