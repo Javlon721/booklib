@@ -11,8 +11,8 @@ func (e ErrCode) String() string {
 	return codeNames[e]
 }
 
-func (e ErrCode) HTTPStatus() int {
-	return httpStatus[e]
+func (e ErrCode) Equal(e2 ErrCode) bool {
+	return e == e2
 }
 
 type Error struct {
@@ -27,7 +27,7 @@ func (e *Error) Error() string {
 }
 
 func (e *Error) HTTPStatus() int {
-	return e.Code.HTTPStatus()
+	return httpStatus[e.Code]
 }
 
 func New(code ErrCode, err error) *Error {
