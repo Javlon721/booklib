@@ -70,18 +70,6 @@ func (h Handler) Login(c fiber.Ctx) error {
 	return c.SendString(token)
 }
 
-func (h Handler) GenerateToken(claims jwt.MapClaims) (string, error) {
-	token := jwt.NewWithClaims(h.tokenCfg.Method, claims)
-
-	s, err := token.SignedString(h.tokenCfg.Secret)
-
-	if err != nil {
-		return "", fmt.Errorf("signing token: %w", err)
-	}
-
-	return s, nil
-}
-
 func (h Handler) Authenticate(ctx context.Context, tokenString string) (AuthenticateResp, error) {
 	token, err := jwt.Parse(tokenString, func(t *jwt.Token) (any, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
