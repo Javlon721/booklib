@@ -71,15 +71,13 @@ func (h Handler) Login(c fiber.Ctx) error {
 }
 
 func (h Handler) Authenticate(ctx context.Context, tokenString string) (AuthenticateResp, error) {
-	token, err := jwt.Parse(tokenString, func(t *jwt.Token) (any, error) {
-		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errs.New(errs.Internal, fmt.Errorf("unexpected signing method: %v", t.Header["alg"]))
-		}
-		return h.tokenCfg.Secret, nil
-	})
+	token, err := ParseToken(tokenString, h.tokenCfg.Secret)
 
 	if err != nil {
-		return AuthenticateResp{}, errs.New(errs.Unauthenticated, err)
+		if errors.Is(err, jwt.ErrTokenExpired) || errors.Is(err, jwt.ErrSignatureInvalid) {
+			return AuthenticateResp{}, errs.New(errs.Unauthenticated, err)
+		}
+		return AuthenticateResp{}, errs.New(errs.Internal, err)
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
