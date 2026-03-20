@@ -61,7 +61,7 @@ func (h Handler) Login(c fiber.Ctx) error {
 		"userID": user.ID.String(),
 	}
 
-	token, err := h.GenerateToken(claims)
+	token, err := GenerateToken(claims, h.tokenCfg.Secret, h.tokenCfg.Method)
 
 	if err != nil {
 		return errs.New(errs.Internal, err)
