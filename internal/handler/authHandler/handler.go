@@ -18,6 +18,8 @@ import (
 var (
 	ErrInvalidAuthParams  = errors.New("invalid auth params")
 	ErrInvalidCredentials = errors.New("invalid credentials")
+	ErrUserIDMissing      = errors.New("userID missing from token hander")
+	ErrUserIDMalformed    = errors.New("userID in token header is malformed")
 )
 
 type UserBus interface {
@@ -55,7 +57,7 @@ func (h Handler) Login(c fiber.Ctx) error {
 	exp := time.Now().UTC().Add(h.tokenCfg.TokenExpiresAt)
 
 	claims := jwt.MapClaims{
-		"exp":    exp,
+		"exp":    jwt.NewNumericDate(exp),
 		"userID": user.ID.String(),
 	}
 
@@ -78,6 +80,46 @@ func (h Handler) GenerateToken(claims jwt.MapClaims) (string, error) {
 	}
 
 	return s, nil
+}
+
+func (h Handler) Authenticate(ctx context.Context, tokenString string) (AuthenticateResp, error) {
+	token, err := jwt.Parse(tokenString, func(t *jwt.Token) (any, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errs.New(errs.Internal, fmt.Errorf("unexpected signing method: %v", t.Header["alg"]))
+		}
+		return h.tokenCfg.Secret, nil
+	})
+
+	if err != nil {
+		return AuthenticateResp{}, errs.New(errs.Unauthenticated, err)
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return AuthenticateResp{}, errs.New(errs.Internal, fmt.Errorf("unexpected claims type"))
+	}
+
+	rawUserID, ok := claims["userID"].(string)
+
+	if !ok {
+		return AuthenticateResp{}, errs.New(errs.Unauthenticated, ErrUserIDMissing)
+	}
+
+	userID, err := uuid.Parse(rawUserID)
+
+	if err != nil {
+		return AuthenticateResp{}, errs.New(errs.Unauthenticated, ErrUserIDMalformed)
+	}
+
+	_, err = h.userBus.GetUserByID(ctx, userID)
+
+	if err != nil {
+		return AuthenticateResp{}, errs.New(errs.Unauthenticated, ErrInvalidCredentials)
+	}
+
+	return AuthenticateResp{
+		UserID: userID,
+	}, nil
 }
 
 func NewHandler(userBus UserBus, logger *slog.Logger, cfg TokenConfig) *Handler {
