@@ -23,6 +23,10 @@ func Errors(logger *slog.Logger) fiber.ErrorHandler {
 			"source_err_func", path.Base(e.FuncName),
 		)
 
+		if e.Code.Equal(errs.Internal) {
+			return c.Status(e.HTTPStatus()).JSON(map[string]string{"error": "internal server error"})
+		}
+
 		return c.Status(e.HTTPStatus()).JSON(map[string]string{"error": e.Message})
 	}
 }
