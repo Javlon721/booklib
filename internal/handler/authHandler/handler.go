@@ -3,11 +3,14 @@ package authhandler
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
+	"time"
 
 	userbus "github.com/Javlon721/booklib/internal/bus/userBus"
 	"github.com/Javlon721/booklib/internal/handler/errs"
 	"github.com/gofiber/fiber/v3"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -23,8 +26,9 @@ type UserBus interface {
 }
 
 type Handler struct {
-	userBus UserBus
-	logger  *slog.Logger
+	userBus  UserBus
+	logger   *slog.Logger
+	tokenCfg TokenConfig
 }
 
 func (h Handler) Login(c fiber.Ctx) error {
@@ -48,12 +52,38 @@ func (h Handler) Login(c fiber.Ctx) error {
 		return errs.New(errs.PermissionDenied, ErrInvalidCredentials)
 	}
 
-	return c.Send([]byte("login succeded"))
+	exp := time.Now().UTC().Add(h.tokenCfg.TokenExpiresAt)
+
+	claims := jwt.MapClaims{
+		"exp":    exp,
+		"userID": user.ID.String(),
+	}
+
+	token, err := h.GenerateToken(claims)
+
+	if err != nil {
+		return errs.New(errs.Internal, err)
+	}
+
+	return c.SendString(token)
 }
 
-func NewHandler(userBus UserBus, logger *slog.Logger) *Handler {
+func (h Handler) GenerateToken(claims jwt.MapClaims) (string, error) {
+	token := jwt.NewWithClaims(h.tokenCfg.Method, claims)
+
+	s, err := token.SignedString(h.tokenCfg.Secret)
+
+	if err != nil {
+		return "", fmt.Errorf("signing token: %w", err)
+	}
+
+	return s, nil
+}
+
+func NewHandler(userBus UserBus, logger *slog.Logger, cfg TokenConfig) *Handler {
 	return &Handler{
-		userBus: userBus,
-		logger:  logger,
+		userBus:  userBus,
+		logger:   logger,
+		tokenCfg: cfg,
 	}
 }

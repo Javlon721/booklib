@@ -12,6 +12,7 @@ import (
 	userhandler "github.com/Javlon721/booklib/internal/handler/userHandler"
 	"github.com/Javlon721/booklib/internal/middleware"
 	"github.com/gofiber/fiber/v3"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
 )
@@ -39,6 +40,12 @@ func run(logger *slog.Logger) error {
 	// Initialize global config
 
 	conf := struct {
+		// Auth
+		Token struct {
+			Secret    string
+			ExpiresAt time.Duration `envconfig:"EXPIRES_AT"`
+		}
+
 		//Database
 		Postgres struct {
 			DB_Name  string
@@ -103,7 +110,12 @@ func run(logger *slog.Logger) error {
 	userStore := userStore.New(dbConn, logger)
 	userBus := userbus.NewBusiness(logger, userStore)
 
-	authhandler.Routes(appV1, userBus, logger)
+	authhandler.Routes(appV1, userBus, logger, authhandler.TokenConfig{
+		Secret:         []byte(conf.Token.Secret),
+		TokenExpiresAt: conf.Token.ExpiresAt,
+		Method:         jwt.SigningMethodHS256,
+	})
+
 	userhandler.Routes(appV1, userBus, logger)
 
 	return app.Listen(apiHost)
