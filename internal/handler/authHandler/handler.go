@@ -5,14 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"time"
 
+	authbus "github.com/Javlon721/booklib/internal/bus/authBus"
 	userbus "github.com/Javlon721/booklib/internal/bus/userBus"
 	"github.com/Javlon721/booklib/internal/handler/errs"
 	"github.com/gofiber/fiber/v3"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
 )
 
 var (
@@ -29,6 +28,7 @@ type UserBus interface {
 
 type Handler struct {
 	userBus  UserBus
+	auth     *authbus.Bussiness
 	logger   *slog.Logger
 	tokenCfg TokenConfig
 }
@@ -40,32 +40,13 @@ func (h Handler) Login(c fiber.Ctx) error {
 		return errs.New(errs.InvalidArgument, ErrInvalidAuthParams)
 	}
 
-	user, err := h.userBus.GetUserByEmail(c.Context(), payload.Email)
+	params, err := toBusAuthParams(payload)
 
 	if err != nil {
-		if errors.Is(err, userbus.ErrUserNotFound) {
-			return errs.New(errs.NotFound, userbus.ErrUserNotFound)
-		}
-
-		return errs.New(errs.Internal, err)
+		return errs.New(errs.InvalidArgument, err)
 	}
 
-	if err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(payload.Password)); err != nil {
-		return errs.New(errs.PermissionDenied, ErrInvalidCredentials)
-	}
-
-	exp := time.Now().UTC().Add(h.tokenCfg.TokenExpiresAt)
-
-	claims := jwt.MapClaims{
-		"exp":    jwt.NewNumericDate(exp),
-		"userID": user.ID.String(),
-	}
-
-	token, err := GenerateToken(claims, h.tokenCfg.Secret, h.tokenCfg.Method)
-
-	if err != nil {
-		return errs.New(errs.Internal, err)
-	}
+	token, err := h.auth.Login(c.Context(), params)
 
 	return c.SendString(token)
 }
@@ -108,10 +89,11 @@ func (h Handler) Authenticate(ctx context.Context, tokenString string) (Authenti
 	}, nil
 }
 
-func NewHandler(userBus UserBus, logger *slog.Logger, cfg TokenConfig) *Handler {
+func NewHandler(userBus UserBus, logger *slog.Logger, cfg TokenConfig, auth *authbus.Bussiness) *Handler {
 	return &Handler{
 		userBus:  userBus,
 		logger:   logger,
 		tokenCfg: cfg,
+		auth:     auth,
 	}
 }

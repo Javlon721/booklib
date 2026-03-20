@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	authbus "github.com/Javlon721/booklib/internal/bus/authBus"
 	userbus "github.com/Javlon721/booklib/internal/bus/userBus"
 	userStore "github.com/Javlon721/booklib/internal/bus/userBus/store"
 	"github.com/Javlon721/booklib/internal/db/postgres"
@@ -112,11 +113,17 @@ func run(logger *slog.Logger) error {
 	userStore := userStore.New(dbConn, logger)
 	userBus := userbus.NewBusiness(logger, userStore)
 
-	authHandler := authhandler.Routes(appV1, userBus, logger, authhandler.TokenConfig{
+	auth := authbus.NewBussiness(logger, userBus, authbus.TokenConfig{
 		Secret:         []byte(conf.Token.Secret),
 		TokenExpiresAt: conf.Token.ExpiresAt,
 		Method:         jwt.SigningMethodHS256,
 	})
+
+	authHandler := authhandler.Routes(appV1, userBus, logger, authhandler.TokenConfig{
+		Secret:         []byte(conf.Token.Secret),
+		TokenExpiresAt: conf.Token.ExpiresAt,
+		Method:         jwt.SigningMethodHS256,
+	}, auth)
 
 	userhandler.Routes(appV1, userBus, logger)
 
