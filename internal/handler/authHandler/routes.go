@@ -7,12 +7,10 @@ import (
 	"github.com/gofiber/fiber/v3"
 )
 
-func Routes(mux fiber.Router, userBus UserBus, logger *slog.Logger, cfg TokenConfig, auth *authbus.Bussiness) *Handler {
+func Routes(mux fiber.Router, userBus UserBus, logger *slog.Logger, auth *authbus.Bussiness) {
 	router := mux.Group("/auth")
 
-	handler := NewHandler(userBus, logger, cfg, auth)
+	handler := NewHandler(userBus, logger, auth)
 
 	router.Post("/login", handler.Login)
-
-	return handler
 }

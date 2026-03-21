@@ -119,15 +119,11 @@ func run(logger *slog.Logger) error {
 		Method:         jwt.SigningMethodHS256,
 	})
 
-	authHandler := authhandler.Routes(appV1, userBus, logger, authhandler.TokenConfig{
-		Secret:         []byte(conf.Token.Secret),
-		TokenExpiresAt: conf.Token.ExpiresAt,
-		Method:         jwt.SigningMethodHS256,
-	}, auth)
+	authhandler.Routes(appV1, userBus, logger, auth)
 
 	userhandler.Routes(appV1, userBus, logger)
 
-	authMid := middleware.Authenticate(logger, authHandler)
+	authMid := middleware.Authenticate(logger, auth)
 
 	appV1.Get("/", authMid, func(c fiber.Ctx) error {
 		userID, err := middleware.GetUserID(c.Context())

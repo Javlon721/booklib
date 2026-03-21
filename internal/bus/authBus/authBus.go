@@ -3,6 +3,7 @@ package authbus
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -16,6 +17,7 @@ var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
 	ErrUserIDMissing      = errors.New("userID missing from token hander")
 	ErrUserIDMalformed    = errors.New("userID in token header is malformed")
+	ErrInvalidToken       = errors.New("invalid token")
 )
 
 type TokenConfig struct {
@@ -68,4 +70,42 @@ func (bus Bussiness) Login(ctx context.Context, payload AuthParams) (string, err
 	}
 
 	return token, nil
+}
+
+func (bus Bussiness) Authenticate(ctx context.Context, tokenString string) (AuthenticateResp, error) {
+	token, err := ParseToken(tokenString, bus.tokenCfg.Secret)
+
+	if err != nil {
+		if errors.Is(err, jwt.ErrTokenExpired) || errors.Is(err, jwt.ErrSignatureInvalid) {
+			return AuthenticateResp{}, ErrInvalidToken
+		}
+		return AuthenticateResp{}, err
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return AuthenticateResp{}, fmt.Errorf("unexpected claims type %T", token.Claims)
+	}
+
+	rawUserID, ok := claims["userID"].(string)
+
+	if !ok {
+		return AuthenticateResp{}, ErrUserIDMissing
+	}
+
+	userID, err := uuid.Parse(rawUserID)
+
+	if err != nil {
+		return AuthenticateResp{}, ErrUserIDMalformed
+	}
+
+	_, err = bus.userBus.GetUserByID(ctx, userID)
+
+	if err != nil {
+		return AuthenticateResp{}, ErrInvalidCredentials
+	}
+
+	return AuthenticateResp{
+		UserID: userID,
+	}, nil
 }
