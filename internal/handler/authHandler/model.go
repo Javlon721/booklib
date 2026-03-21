@@ -1,12 +1,11 @@
 package authhandler
 
 import (
-	"errors"
 	"fmt"
 	"net/mail"
-	"strings"
 
 	authbus "github.com/Javlon721/booklib/internal/bus/authBus"
+	"github.com/Javlon721/booklib/internal/handler/errs"
 	"github.com/Javlon721/booklib/internal/types/password"
 	"github.com/google/uuid"
 )
@@ -21,22 +20,22 @@ type AuthenticateResp struct {
 }
 
 func toBusAuthParams(p AuthParams) (authbus.AuthParams, error) {
-	var parseErrors []string
+	var errors errs.FieldErrors
 
 	password, err := password.Parse(p.Password)
 
 	if err != nil {
-		parseErrors = append(parseErrors, fmt.Sprintf("password: %s", err.Error()))
+		errors.Add("password", err)
 	}
 
 	email, err := mail.ParseAddress(p.Email)
 
 	if err != nil {
-		parseErrors = append(parseErrors, fmt.Sprintf("email: %s", err.Error()))
+		errors.Add("email", err)
 	}
 
-	if len(parseErrors) > 0 {
-		return authbus.AuthParams{}, errors.New(strings.Join(parseErrors, "\n"))
+	if len(errors) > 0 {
+		return authbus.AuthParams{}, fmt.Errorf("validate: %w", errors.ToError())
 	}
 
 	return authbus.AuthParams{

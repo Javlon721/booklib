@@ -1,13 +1,12 @@
 package userhandler
 
 import (
-	"errors"
 	"fmt"
 	"net/mail"
-	"strings"
 	"time"
 
 	userbus "github.com/Javlon721/booklib/internal/bus/userBus"
+	"github.com/Javlon721/booklib/internal/handler/errs"
 	"github.com/Javlon721/booklib/internal/types/name"
 	"github.com/Javlon721/booklib/internal/types/password"
 )
@@ -40,34 +39,34 @@ type NewUser struct {
 }
 
 func toBusUser(u NewUser) (userbus.CreateUser, error) {
-	var parseErrors []string
+	var errors errs.FieldErrors
 
 	firstName, err := name.Parse(u.FirstName)
 
 	if err != nil {
-		parseErrors = append(parseErrors, fmt.Sprintf("first_name: %s", err.Error()))
+		errors.Add("first_name", err)
 	}
 
 	LastName, err := name.Parse(u.LastName)
 
 	if err != nil {
-		parseErrors = append(parseErrors, fmt.Sprintf("last_name: %s", err.Error()))
+		errors.Add("last_name", err)
 	}
 
 	password, err := password.Parse(u.Password)
 
 	if err != nil {
-		parseErrors = append(parseErrors, fmt.Sprintf("password: %s", err.Error()))
+		errors.Add("password", err)
 	}
 
 	email, err := mail.ParseAddress(u.Email)
 
 	if err != nil {
-		parseErrors = append(parseErrors, fmt.Sprintf("email: %s", err.Error()))
+		errors.Add("email", err)
 	}
 
-	if len(parseErrors) > 0 {
-		return userbus.CreateUser{}, errors.New(strings.Join(parseErrors, "\n"))
+	if len(errors) > 0 {
+		return userbus.CreateUser{}, fmt.Errorf("validate: %w", errors.ToError())
 	}
 
 	return userbus.CreateUser{

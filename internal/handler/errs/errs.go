@@ -1,6 +1,7 @@
 package errs
 
 import (
+	"encoding/json"
 	"fmt"
 	"runtime"
 )
@@ -50,4 +51,34 @@ func Errorf(code ErrCode, format string, v ...any) *Error {
 		FuncName: runtime.FuncForPC(pc).Name(),
 		FileName: fmt.Sprintf("%s:%d", filename, line),
 	}
+}
+
+// -------------------------------------------------------------------------
+
+type FieldError struct {
+	Field string `json:"field"`
+	Err   string `json:"error"`
+}
+
+type FieldErrors []FieldError
+
+func (fe *FieldErrors) Add(field string, err error) {
+	*fe = append(*fe, FieldError{
+		Field: field,
+		Err:   err.Error(),
+	})
+}
+
+func (fe *FieldErrors) ToError() *Error {
+	return New(InvalidArgument, fe)
+}
+
+func (fe *FieldErrors) Error() string {
+	str, err := json.Marshal(fe)
+
+	if err != nil {
+		return err.Error()
+	}
+
+	return string(str)
 }
