@@ -7,7 +7,6 @@ import (
 	"time"
 
 	userbus "github.com/Javlon721/booklib/internal/bus/userBus"
-	"github.com/Javlon721/booklib/internal/handler/errs"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -48,15 +47,11 @@ func (bus Bussiness) Login(ctx context.Context, payload AuthParams) (string, err
 	user, err := bus.userBus.GetUserByEmail(ctx, payload.Email.Address)
 
 	if err != nil {
-		if errors.Is(err, userbus.ErrUserNotFound) {
-			return "", errs.New(errs.NotFound, userbus.ErrUserNotFound)
-		}
-
-		return "", errs.New(errs.Internal, err)
+		return "", err
 	}
 
 	if err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(payload.Password.String())); err != nil {
-		return "", errs.New(errs.PermissionDenied, ErrInvalidCredentials)
+		return "", ErrInvalidCredentials
 	}
 
 	exp := time.Now().UTC().Add(bus.tokenCfg.TokenExpiresAt)
@@ -69,7 +64,7 @@ func (bus Bussiness) Login(ctx context.Context, payload AuthParams) (string, err
 	token, err := GenerateToken(claims, bus.tokenCfg.Secret, bus.tokenCfg.Method)
 
 	if err != nil {
-		return "", errs.New(errs.Internal, err)
+		return "", err
 	}
 
 	return token, nil

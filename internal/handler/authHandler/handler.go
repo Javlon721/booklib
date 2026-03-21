@@ -48,6 +48,18 @@ func (h Handler) Login(c fiber.Ctx) error {
 
 	token, err := h.auth.Login(c.Context(), params)
 
+	if err != nil {
+		if errors.Is(err, userbus.ErrUserNotFound) {
+			return errs.New(errs.Unauthenticated, err)
+		}
+
+		if errors.Is(err, authbus.ErrInvalidCredentials) {
+			return errs.New(errs.PermissionDenied, err)
+		}
+
+		return errs.New(errs.Internal, err)
+	}
+
 	return c.SendString(token)
 }
 
