@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log/slog"
 	"os"
 	"time"
@@ -11,7 +10,6 @@ import (
 	userStore "github.com/Javlon721/booklib/internal/bus/userBus/store"
 	"github.com/Javlon721/booklib/internal/db/postgres"
 	authhandler "github.com/Javlon721/booklib/internal/handler/authHandler"
-	"github.com/Javlon721/booklib/internal/handler/errs"
 	"github.com/Javlon721/booklib/internal/handler/middleware"
 	userhandler "github.com/Javlon721/booklib/internal/handler/userHandler"
 	"github.com/gofiber/fiber/v3"
@@ -119,21 +117,17 @@ func run(logger *slog.Logger) error {
 		Method:         jwt.SigningMethodHS256,
 	})
 
-	authhandler.Routes(appV1, userBus, logger, auth)
-
-	userhandler.Routes(appV1, userBus, logger)
+	// -------------------------------------------------------------------------
+	// Auth Middleware
 
 	authMid := middleware.Authenticate(logger, auth)
 
-	appV1.Get("/", authMid, func(c fiber.Ctx) error {
-		userID, err := middleware.GetUserID(c.Context())
+	// -------------------------------------------------------------------------
+	// Register handlers routes
 
-		if err != nil {
-			return errs.New(errs.Internal, err)
-		}
+	authhandler.Routes(appV1, userBus, logger, auth)
 
-		return c.SendString(fmt.Sprintf("u r welcome %s", userID))
-	})
+	userhandler.Routes(appV1, userBus, logger, authMid)
 
 	return app.Listen(apiHost)
 }

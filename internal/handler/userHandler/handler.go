@@ -8,6 +8,7 @@ import (
 
 	userbus "github.com/Javlon721/booklib/internal/bus/userBus"
 	"github.com/Javlon721/booklib/internal/handler/errs"
+	"github.com/Javlon721/booklib/internal/handler/middleware"
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
 )
@@ -56,6 +57,25 @@ func (h Handler) GetUserByID(c fiber.Ctx) error {
 
 	if err != nil {
 		return errs.New(errs.InvalidArgument, fmt.Errorf("cannot parse userID: %w", err))
+	}
+
+	user, err := h.userBus.GetUserByID(c.Context(), userID)
+
+	if err != nil {
+		if errors.Is(err, userbus.ErrUserNotFound) {
+			return errs.New(errs.NotFound, userbus.ErrUserNotFound)
+		}
+		return errs.New(errs.Internal, err)
+	}
+
+	return c.JSON(toHandlerUser(user))
+}
+
+func (h Handler) GetMe(c fiber.Ctx) error {
+	userID, err := middleware.GetUserID(c.Context())
+
+	if err != nil {
+		return err
 	}
 
 	user, err := h.userBus.GetUserByID(c.Context(), userID)
