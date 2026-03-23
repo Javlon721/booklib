@@ -7,6 +7,7 @@ import (
 
 	userbus "github.com/Javlon721/booklib/internal/bus/userBus"
 	"github.com/Javlon721/booklib/internal/types/name"
+	"github.com/Javlon721/booklib/internal/types/role"
 	"github.com/google/uuid"
 )
 
@@ -18,6 +19,7 @@ type userDB struct {
 	PasswordHash []byte
 	DateCreated  time.Time
 	DateUpdated  time.Time
+	Roles        []string
 }
 
 func toDBUser(u userbus.User) userDB {
@@ -29,6 +31,7 @@ func toDBUser(u userbus.User) userDB {
 		PasswordHash: u.PasswordHash,
 		DateCreated:  u.DateCreated.UTC(),
 		DateUpdated:  u.DateUpdated.UTC(),
+		Roles:        role.ParseToString(u.Roles),
 	}
 }
 
@@ -49,6 +52,12 @@ func toBusUser(u userDB) (userbus.User, error) {
 		return userbus.User{}, fmt.Errorf("parse lastName: %w", err)
 	}
 
+	roles, err := role.ParseMany(u.Roles)
+
+	if err != nil {
+		return userbus.User{}, fmt.Errorf("parse roles: %w", err)
+	}
+
 	return userbus.User{
 		ID:           u.ID,
 		FirstName:    firstName,
@@ -57,5 +66,6 @@ func toBusUser(u userDB) (userbus.User, error) {
 		PasswordHash: u.PasswordHash,
 		DateCreated:  u.DateCreated.In(time.Local),
 		DateUpdated:  u.DateUpdated.In(time.Local),
+		Roles:        roles,
 	}, nil
 }

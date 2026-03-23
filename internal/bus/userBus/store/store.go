@@ -25,7 +25,7 @@ func New(db sqldb.DB, logger *slog.Logger) *Store {
 
 func (s Store) GetUserByID(ctx context.Context, userID uuid.UUID) (userbus.User, error) {
 	const q = `
-	SELECT user_id, first_name, last_name, email, hash_password, date_created, date_updated
+	SELECT user_id, first_name, last_name, email, hash_password, date_created, date_updated, roles
 	FROM users 
 	WHERE user_id = $1
 	`
@@ -34,7 +34,7 @@ func (s Store) GetUserByID(ctx context.Context, userID uuid.UUID) (userbus.User,
 
 	row := s.db.QueryRow(ctx, q, userID)
 
-	if err := sqldb.ExtractPosgreErr(row.Scan(&dbUser.ID, &dbUser.FirstName, &dbUser.LastName, &dbUser.Email, &dbUser.PasswordHash, &dbUser.DateCreated, &dbUser.DateUpdated)); err != nil {
+	if err := sqldb.ExtractPosgreErr(row.Scan(&dbUser.ID, &dbUser.FirstName, &dbUser.LastName, &dbUser.Email, &dbUser.PasswordHash, &dbUser.DateCreated, &dbUser.DateUpdated, &dbUser.Roles)); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return userbus.User{}, userbus.ErrUserNotFound
 		}
@@ -46,7 +46,7 @@ func (s Store) GetUserByID(ctx context.Context, userID uuid.UUID) (userbus.User,
 
 func (s Store) GetUserByEmail(ctx context.Context, email string) (userbus.User, error) {
 	const q = `
-	SELECT user_id, first_name, last_name, email, hash_password, date_created, date_updated
+	SELECT user_id, first_name, last_name, email, hash_password, date_created, date_updated, roles
 	FROM users 
 	WHERE email = $1
 	`
@@ -55,7 +55,7 @@ func (s Store) GetUserByEmail(ctx context.Context, email string) (userbus.User, 
 
 	row := s.db.QueryRow(ctx, q, email)
 
-	if err := sqldb.ExtractPosgreErr(row.Scan(&dbUser.ID, &dbUser.FirstName, &dbUser.LastName, &dbUser.Email, &dbUser.PasswordHash, &dbUser.DateCreated, &dbUser.DateUpdated)); err != nil {
+	if err := sqldb.ExtractPosgreErr(row.Scan(&dbUser.ID, &dbUser.FirstName, &dbUser.LastName, &dbUser.Email, &dbUser.PasswordHash, &dbUser.DateCreated, &dbUser.DateUpdated, &dbUser.Roles)); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return userbus.User{}, userbus.ErrUserNotFound
 		}
@@ -68,16 +68,18 @@ func (s Store) GetUserByEmail(ctx context.Context, email string) (userbus.User, 
 func (s Store) Create(ctx context.Context, nu userbus.User) (uuid.UUID, error) {
 	const q = `
 	INSERT INTO users 
-		(first_name, last_name, email, hash_password, date_created, date_updated)
+		(first_name, last_name, email, hash_password, date_created, date_updated, roles)
 	VALUES 
-		($1, $2, $3, $4, $5, $6)
+		($1, $2, $3, $4, $5, $6, $7)
 	RETURNING user_id`
 
 	var id uuid.UUID
 
 	dbUser := toDBUser(nu)
 
-	row := s.db.QueryRow(ctx, q, dbUser.FirstName, dbUser.LastName, dbUser.Email, dbUser.PasswordHash, dbUser.DateCreated, dbUser.DateUpdated)
+	s.logger.Info("create user", "roles", dbUser.Roles)
+
+	row := s.db.QueryRow(ctx, q, dbUser.FirstName, dbUser.LastName, dbUser.Email, dbUser.PasswordHash, dbUser.DateCreated, dbUser.DateUpdated, dbUser.Roles)
 
 	if err := sqldb.ExtractPosgreErr(row.Scan(&id)); err != nil {
 		if errors.Is(err, sqldb.ErrDBDuplicatedEntry) {

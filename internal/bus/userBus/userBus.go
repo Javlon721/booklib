@@ -50,6 +50,7 @@ func (bus Business) Create(ctx context.Context, nu CreateUser) (User, error) {
 		Email:        nu.Email,
 		DateCreated:  now,
 		DateUpdated:  now,
+		Roles:        nu.Roles,
 	}
 
 	id, err := bus.store.Create(ctx, user)

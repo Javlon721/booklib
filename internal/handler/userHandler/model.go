@@ -9,15 +9,17 @@ import (
 	"github.com/Javlon721/booklib/internal/handler/errs"
 	"github.com/Javlon721/booklib/internal/types/name"
 	"github.com/Javlon721/booklib/internal/types/password"
+	"github.com/Javlon721/booklib/internal/types/role"
 )
 
 type User struct {
-	ID          string `json:"id"`
-	FirstName   string `json:"first_name"`
-	LastName    string `json:"last_name,omitempty"`
-	Email       string `json:"email"`
-	DateCreated string `json:"date_created"`
-	DateUpdated string `json:"date_updated"`
+	ID          string   `json:"id"`
+	FirstName   string   `json:"first_name"`
+	LastName    string   `json:"last_name,omitempty"`
+	Email       string   `json:"email"`
+	DateCreated string   `json:"date_created"`
+	DateUpdated string   `json:"date_updated"`
+	Roles       []string `json:"roles"`
 }
 
 func toHandlerUser(u userbus.User) User {
@@ -28,14 +30,16 @@ func toHandlerUser(u userbus.User) User {
 		Email:       u.Email.Address,
 		DateCreated: u.DateCreated.Format(time.RFC3339),
 		DateUpdated: u.DateUpdated.Format(time.RFC3339),
+		Roles:       role.ParseToString(u.Roles),
 	}
 }
 
 type NewUser struct {
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name,omitempty"`
-	Email     string `json:"email"`
-	Password  string `json:"password"`
+	FirstName string   `json:"first_name"`
+	LastName  string   `json:"last_name,omitempty"`
+	Email     string   `json:"email"`
+	Password  string   `json:"password"`
+	Roles     []string `json:"roles"`
 }
 
 func toBusUser(u NewUser) (userbus.CreateUser, error) {
@@ -65,6 +69,12 @@ func toBusUser(u NewUser) (userbus.CreateUser, error) {
 		errors.Add("email", err)
 	}
 
+	roles, err := role.ParseMany(u.Roles)
+
+	if err != nil {
+		errors.Add("roles", err)
+	}
+
 	if len(errors) > 0 {
 		return userbus.CreateUser{}, fmt.Errorf("validate: %w", errors.ToError())
 	}
@@ -74,5 +84,6 @@ func toBusUser(u NewUser) (userbus.CreateUser, error) {
 		LastName:  LastName,
 		Email:     *email,
 		Password:  password,
+		Roles:     roles,
 	}, nil
 }

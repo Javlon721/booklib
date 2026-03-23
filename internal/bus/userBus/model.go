@@ -6,6 +6,7 @@ import (
 
 	"github.com/Javlon721/booklib/internal/types/name"
 	"github.com/Javlon721/booklib/internal/types/password"
+	"github.com/Javlon721/booklib/internal/types/role"
 	"github.com/google/uuid"
 )
 
@@ -14,6 +15,7 @@ type CreateUser struct {
 	LastName  name.Name
 	Password  password.Password
 	Email     mail.Address
+	Roles     []role.Role
 }
 
 type User struct {
@@ -24,4 +26,5 @@ type User struct {
 	PasswordHash []byte
 	DateCreated  time.Time
 	DateUpdated  time.Time
+	Roles        []role.Role
 }
