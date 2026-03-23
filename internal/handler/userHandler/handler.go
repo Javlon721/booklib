@@ -29,7 +29,7 @@ func (h Handler) Create(c fiber.Ctx) error {
 	var nu NewUser
 
 	if err := c.Bind().Body(&nu); err != nil {
-		return errs.New(errs.Internal, err)
+		return errs.New(errs.InvalidArgument, err)
 	}
 
 	bu, err := toBusUser(nu)
