@@ -24,3 +24,13 @@ func Parse(value string) (Password, error) {
 		value: value,
 	}, nil
 }
+
+func MustParse(value string) Password {
+	password, err := Parse(value)
+
+	if err != nil {
+		panic(err)
+	}
+
+	return password
+}

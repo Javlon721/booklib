@@ -22,3 +22,13 @@ func Parse(value string) (Name, error) {
 
 	return Name{value: value}, nil
 }
+
+func MustParse(value string) Name {
+	name, err := Parse(value)
+
+	if err != nil {
+		panic(err)
+	}
+
+	return name
+}
