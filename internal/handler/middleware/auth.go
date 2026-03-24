@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"strings"
 
 	authbus "github.com/Javlon721/booklib/internal/bus/authBus"
 	"github.com/Javlon721/booklib/internal/handler/errs"
@@ -17,17 +16,15 @@ type Authenticator interface {
 
 func Authenticate(logger *slog.Logger, a Authenticator) fiber.Handler {
 	return func(c fiber.Ctx) error {
-		bearer := c.Get("Authorization")
+		bearerToken := c.Get("Authorization")
 
-		if !strings.HasPrefix(bearer, "Bearer ") {
-			return errs.New(errs.Unauthenticated, fmt.Errorf("expected authorization header format: Bearer <token>"))
+		if bearerToken == "" {
+			return errs.New(errs.Unauthenticated, fmt.Errorf("authorization token not found"))
 		}
-
-		tokenString := bearer[7:]
 
 		ctx := c.Context()
 
-		resp, err := a.Authenticate(ctx, tokenString)
+		resp, err := a.Authenticate(ctx, bearerToken)
 
 		if err != nil {
 			return errs.New(errs.Unauthenticated, err)

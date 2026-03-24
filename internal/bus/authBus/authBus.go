@@ -5,9 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	userbus "github.com/Javlon721/booklib/internal/bus/userBus"
+	"github.com/Javlon721/booklib/internal/types/role"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -16,7 +18,9 @@ import (
 var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
 	ErrUserIDMissing      = errors.New("userID missing from token hander")
+	ErrUserRolesMissing   = errors.New("user roles missing from token hander")
 	ErrUserIDMalformed    = errors.New("userID in token header is malformed")
+	ErrUserRolesMalformed = errors.New("user roles in token header are malformed")
 	ErrInvalidToken       = errors.New("invalid token")
 )
 
@@ -35,6 +39,7 @@ type Bussiness struct {
 	logger   *slog.Logger
 	userBus  UserBus
 	tokenCfg TokenConfig
+	parser   *jwt.Parser
 }
 
 func NewBussiness(logger *slog.Logger, userBus UserBus, tokenCfg TokenConfig) *Bussiness {
@@ -42,6 +47,7 @@ func NewBussiness(logger *slog.Logger, userBus UserBus, tokenCfg TokenConfig) *B
 		logger:   logger,
 		userBus:  userBus,
 		tokenCfg: tokenCfg,
+		parser:   jwt.NewParser(jwt.WithValidMethods([]string{tokenCfg.Method.Alg()})),
 	}
 }
 
@@ -56,11 +62,13 @@ func (bus Bussiness) Login(ctx context.Context, payload AuthParams) (string, err
 		return "", ErrInvalidCredentials
 	}
 
-	exp := time.Now().UTC().Add(bus.tokenCfg.TokenExpiresAt)
-
-	claims := jwt.MapClaims{
-		"exp":    jwt.NewNumericDate(exp),
-		"userID": user.ID.String(),
+	claims := Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   user.ID.String(),
+			ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(bus.tokenCfg.TokenExpiresAt)),
+			IssuedAt:  jwt.NewNumericDate(time.Now().UTC()),
+		},
+		Roles: role.ParseToString(user.Roles),
 	}
 
 	token, err := GenerateToken(claims, bus.tokenCfg.Secret, bus.tokenCfg.Method)
@@ -72,8 +80,18 @@ func (bus Bussiness) Login(ctx context.Context, payload AuthParams) (string, err
 	return token, nil
 }
 
-func (bus Bussiness) Authenticate(ctx context.Context, tokenString string) (AuthenticateResp, error) {
-	token, err := ParseToken(tokenString, bus.tokenCfg.Secret)
+func (bus Bussiness) Authenticate(ctx context.Context, bearerString string) (AuthenticateResp, error) {
+	if !strings.HasPrefix(bearerString, "Bearer ") {
+		return AuthenticateResp{}, fmt.Errorf("expected authorization header format: Bearer <token>")
+	}
+
+	jwtUnverified := bearerString[7:]
+
+	var claims Claims
+
+	_, err := bus.parser.ParseWithClaims(jwtUnverified, &claims, func(t *jwt.Token) (any, error) {
+		return bus.tokenCfg.Secret, nil
+	})
 
 	if err != nil {
 		if errors.Is(err, jwt.ErrTokenExpired) || errors.Is(err, jwt.ErrSignatureInvalid) {
@@ -82,21 +100,20 @@ func (bus Bussiness) Authenticate(ctx context.Context, tokenString string) (Auth
 		return AuthenticateResp{}, err
 	}
 
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
-		return AuthenticateResp{}, fmt.Errorf("unexpected claims type %T", token.Claims)
-	}
-
-	rawUserID, ok := claims["userID"].(string)
-
-	if !ok {
+	if claims.Subject == "" {
 		return AuthenticateResp{}, ErrUserIDMissing
 	}
 
-	userID, err := uuid.Parse(rawUserID)
+	userID, err := uuid.Parse(claims.Subject)
 
 	if err != nil {
 		return AuthenticateResp{}, ErrUserIDMalformed
+	}
+
+	roles, err := role.ParseMany(claims.Roles)
+
+	if err != nil {
+		return AuthenticateResp{}, ErrUserRolesMalformed
 	}
 
 	_, err = bus.userBus.GetUserByID(ctx, userID)
@@ -107,5 +124,6 @@ func (bus Bussiness) Authenticate(ctx context.Context, tokenString string) (Auth
 
 	return AuthenticateResp{
 		UserID: userID,
+		Roles:  roles,
 	}, nil
 }
