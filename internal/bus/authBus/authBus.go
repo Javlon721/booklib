@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 	"strings"
 	"time"
 
@@ -126,4 +127,13 @@ func (bus Bussiness) Authenticate(ctx context.Context, bearerString string) (Aut
 		UserID: userID,
 		Roles:  roles,
 	}, nil
+}
+
+func (bus Bussiness) Authorize(ctx context.Context, targetRoles, roles []role.Role) bool {
+	for _, role := range targetRoles {
+		if slices.Index(roles, role) == -1 {
+			return false
+		}
+	}
+	return true
 }

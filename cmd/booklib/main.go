@@ -121,13 +121,14 @@ func run(logger *slog.Logger) error {
 	// Auth Middleware
 
 	authMid := middleware.Authenticate(logger, auth)
+	authorizeMid := middleware.Authorize(logger, auth)
 
 	// -------------------------------------------------------------------------
 	// Register handlers routes
 
 	authhandler.Routes(appV1, userBus, logger, auth)
 
-	userhandler.Routes(appV1, userBus, logger, authMid)
+	userhandler.Routes(appV1, userBus, logger, authMid, authorizeMid)
 
 	return app.Listen(apiHost)
 }
