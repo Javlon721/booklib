@@ -8,12 +8,15 @@ import (
 	authbus "github.com/Javlon721/booklib/internal/bus/authBus"
 	topicbus "github.com/Javlon721/booklib/internal/bus/topicBus"
 	topicStore "github.com/Javlon721/booklib/internal/bus/topicBus/store"
+	topicmessagebus "github.com/Javlon721/booklib/internal/bus/topicMessageBus"
+	topicmessageStore "github.com/Javlon721/booklib/internal/bus/topicMessageBus/store"
 	userbus "github.com/Javlon721/booklib/internal/bus/userBus"
 	userStore "github.com/Javlon721/booklib/internal/bus/userBus/store"
 	"github.com/Javlon721/booklib/internal/db/postgres"
 	authhandler "github.com/Javlon721/booklib/internal/handler/authHandler"
 	"github.com/Javlon721/booklib/internal/handler/middleware"
 	topichandler "github.com/Javlon721/booklib/internal/handler/topicHandler"
+	topicmessagehandler "github.com/Javlon721/booklib/internal/handler/topicMessageHandler"
 	userhandler "github.com/Javlon721/booklib/internal/handler/userHandler"
 	"github.com/gofiber/fiber/v3"
 	"github.com/golang-jwt/jwt/v5"
@@ -125,6 +128,9 @@ func run(logger *slog.Logger) error {
 	topicStore := topicStore.New(dbConn, logger)
 	topicBus := topicbus.NewBusiness(logger, topicStore)
 
+	topicmessageStore := topicmessageStore.New(dbConn, logger)
+	topicMessageBus := topicmessagebus.NewBusiness(logger, topicmessageStore)
+
 	// -------------------------------------------------------------------------
 	// Auth Middleware
 
@@ -139,6 +145,8 @@ func run(logger *slog.Logger) error {
 	userhandler.Routes(appV1, userBus, logger, authMid, authorizeMid)
 
 	topichandler.Routes(appV1, topicBus, logger, authMid)
+
+	topicmessagehandler.Routes(appV1, topicMessageBus, logger, authMid)
 
 	return app.Listen(apiHost)
 }
