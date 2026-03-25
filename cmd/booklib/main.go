@@ -6,11 +6,14 @@ import (
 	"time"
 
 	authbus "github.com/Javlon721/booklib/internal/bus/authBus"
+	topicbus "github.com/Javlon721/booklib/internal/bus/topicBus"
+	topicStore "github.com/Javlon721/booklib/internal/bus/topicBus/store"
 	userbus "github.com/Javlon721/booklib/internal/bus/userBus"
 	userStore "github.com/Javlon721/booklib/internal/bus/userBus/store"
 	"github.com/Javlon721/booklib/internal/db/postgres"
 	authhandler "github.com/Javlon721/booklib/internal/handler/authHandler"
 	"github.com/Javlon721/booklib/internal/handler/middleware"
+	topichandler "github.com/Javlon721/booklib/internal/handler/topicHandler"
 	userhandler "github.com/Javlon721/booklib/internal/handler/userHandler"
 	"github.com/gofiber/fiber/v3"
 	"github.com/golang-jwt/jwt/v5"
@@ -119,6 +122,9 @@ func run(logger *slog.Logger) error {
 		Method:         jwt.SigningMethodHS256,
 	})
 
+	topicStore := topicStore.New(dbConn, logger)
+	topicBus := topicbus.NewBusiness(logger, topicStore)
+
 	// -------------------------------------------------------------------------
 	// Auth Middleware
 
@@ -131,6 +137,8 @@ func run(logger *slog.Logger) error {
 	authhandler.Routes(appV1, userBus, logger, auth)
 
 	userhandler.Routes(appV1, userBus, logger, authMid, authorizeMid)
+
+	topichandler.Routes(appV1, topicBus, logger, authMid)
 
 	return app.Listen(apiHost)
 }

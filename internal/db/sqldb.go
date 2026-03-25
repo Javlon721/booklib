@@ -9,13 +9,15 @@ import (
 )
 
 const (
-	uniqueViolation = "23505"
-	undefinedTable  = "42P01"
+	uniqueViolation     = "23505"
+	undefinedTable      = "42P01"
+	foreignKeyViolation = "23503"
 )
 
 var (
-	ErrDBDuplicatedEntry = errors.New("duplicated entry")
-	ErrUndefinedTable    = errors.New("undefined table")
+	ErrDBDuplicatedEntry   = errors.New("duplicated entry")
+	ErrUndefinedTable      = errors.New("undefined table")
+	ErrFfreignKeyViolation = errors.New("foreign key violation")
 )
 
 type DB interface {
@@ -37,6 +39,8 @@ func ExtractPosgreErr(err error) error {
 			return ErrUndefinedTable
 		case uniqueViolation:
 			return ErrDBDuplicatedEntry
+		case foreignKeyViolation:
+			return ErrFfreignKeyViolation
 		}
 	}
 
