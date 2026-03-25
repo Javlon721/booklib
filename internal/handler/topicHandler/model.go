@@ -52,3 +52,11 @@ func toHandlerTopic(t topicbus.Topic) Topic {
 		CreatedBy:   t.CreatedBy.String(),
 	}
 }
+
+func toHandlerTopics(t []topicbus.Topic) []Topic {
+	result := make([]Topic, len(t))
+	for i, v := range t {
+		result[i] = toHandlerTopic(v)
+	}
+	return result
+}

@@ -1,6 +1,7 @@
 package store
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"log/slog"
@@ -64,4 +65,32 @@ func (s Store) GetByID(ctx context.Context, topicID uuid.UUID) (topicbus.Topic, 
 	}
 
 	return toBusTopic(dbTopic)
+}
+
+func (s Store) Query(ctx context.Context, filter topicbus.QueryFilter) ([]topicbus.Topic, error) {
+	q := `
+		SELECT topic_id, title, date_created, date_updated, created_by
+		FROM topics
+	`
+
+	buf := bytes.NewBufferString(q)
+	namedArgs := applyFilter(filter, buf)
+
+	s.logger.Info("store.query", "q", buf.String())
+
+	rows, err := s.db.Query(ctx, buf.String(), namedArgs)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	topics, err := pgx.CollectRows(rows, pgx.RowToStructByName[topicDB])
+
+	if err != nil {
+		return nil, err
+	}
+
+	return toBusTopics(topics)
 }

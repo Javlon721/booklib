@@ -74,3 +74,29 @@ func (h Handler) GetTopicByID(c fiber.Ctx) error {
 
 	return c.JSON(toHandlerTopic(topic))
 }
+
+func (h Handler) Query(c fiber.Ctx) error {
+	qp, err := parseQueryParams(c)
+
+	if err != nil {
+		return errs.New(errs.InvalidArgument, err)
+	}
+
+	h.logger.Info("handler", "qp", qp)
+
+	filter, err := parseFilter(qp)
+
+	if err != nil {
+		return errs.New(errs.InvalidArgument, err)
+	}
+
+	h.logger.Info("handler", "filter", filter)
+
+	topics, err := h.topicBus.Query(c.Context(), filter)
+
+	if err != nil {
+		return errs.New(errs.Internal, err)
+	}
+
+	return c.JSON(toHandlerTopics(topics))
+}

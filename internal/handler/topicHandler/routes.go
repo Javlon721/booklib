@@ -18,5 +18,6 @@ func Routes(
 	topicHandler := NewHandler(topicBus, logger)
 
 	router.Post("/", authMid, topicHandler.Create)
+	router.Get("/", topicHandler.Query)
 	router.Get("/:topicID", topicHandler.GetTopicByID)
 }

@@ -10,11 +10,11 @@ import (
 )
 
 type topicDB struct {
-	ID          uuid.UUID
-	Title       string
-	DateCreated time.Time
-	DateUpdated time.Time
-	CreatedBy   uuid.UUID
+	ID          uuid.UUID `db:"topic_id"`
+	Title       string    `db:"title"`
+	DateCreated time.Time `db:"date_created"`
+	DateUpdated time.Time `db:"date_updated"`
+	CreatedBy   uuid.UUID `db:"created_by"`
 }
 
 func toDBTopic(t topicbus.Topic) topicDB {
@@ -41,4 +41,20 @@ func toBusTopic(t topicDB) (topicbus.Topic, error) {
 		DateUpdated: t.DateUpdated.In(time.Local),
 		CreatedBy:   t.CreatedBy,
 	}, nil
+}
+
+func toBusTopics(t []topicDB) ([]topicbus.Topic, error) {
+	result := make([]topicbus.Topic, len(t))
+
+	for i, v := range t {
+		busTopic, err := toBusTopic(v)
+
+		if err != nil {
+			return nil, err
+		}
+
+		result[i] = busTopic
+	}
+
+	return result, nil
 }
