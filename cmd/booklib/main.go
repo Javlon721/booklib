@@ -84,6 +84,8 @@ func run(logger *slog.Logger) error {
 		return err
 	}
 
+	defer dbConn.Close()
+
 	// -------------------------------------------------------------------------
 	// Initialize fiber app
 
