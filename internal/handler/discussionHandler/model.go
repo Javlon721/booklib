@@ -1,10 +1,10 @@
-package topicmessagehandler
+package discussionHandler
 
 import (
 	"fmt"
 	"time"
 
-	topicmessagebus "github.com/Javlon721/booklib/internal/bus/topicMessageBus"
+	discussionsBus "github.com/Javlon721/booklib/internal/bus/discussionBus"
 	"github.com/Javlon721/booklib/internal/handler/errs"
 	"github.com/Javlon721/booklib/internal/types/name"
 	"github.com/google/uuid"
@@ -24,7 +24,7 @@ type TopicMessage struct {
 	TopicID     string `json:"topic_id"`
 }
 
-func toBusTopicMessage(topicMessage NewTopicMessage, userID uuid.UUID) (topicmessagebus.NewTopicMessage, error) {
+func toBusTopicMessage(topicMessage NewTopicMessage, userID uuid.UUID) (discussionsBus.NewTopicMessage, error) {
 	var fieldErrors errs.FieldErrors
 
 	topicID, err := uuid.Parse(topicMessage.TopicID)
@@ -40,17 +40,17 @@ func toBusTopicMessage(topicMessage NewTopicMessage, userID uuid.UUID) (topicmes
 	}
 
 	if len(fieldErrors) > 0 {
-		return topicmessagebus.NewTopicMessage{}, fmt.Errorf("parse: %w", fieldErrors.ToError())
+		return discussionsBus.NewTopicMessage{}, fmt.Errorf("parse: %w", fieldErrors.ToError())
 	}
 
-	return topicmessagebus.NewTopicMessage{
+	return discussionsBus.NewTopicMessage{
 		TopicID: topicID,
 		UserID:  userID,
 		Message: message,
 	}, nil
 }
 
-func toHandlerTopicMessage(topicMessage topicmessagebus.TopicMessage) TopicMessage {
+func toHandlerTopicMessage(topicMessage discussionsBus.TopicMessage) TopicMessage {
 	return TopicMessage{
 		ID:          topicMessage.ID.String(),
 		Message:     topicMessage.Message.String(),

@@ -4,7 +4,7 @@ import (
 	"context"
 	"log/slog"
 
-	topicmessagebus "github.com/Javlon721/booklib/internal/bus/topicMessageBus"
+	discussionBus "github.com/Javlon721/booklib/internal/bus/discussionBus"
 	sqldb "github.com/Javlon721/booklib/internal/db"
 	"github.com/google/uuid"
 )
@@ -21,9 +21,9 @@ func New(db sqldb.DB, logger *slog.Logger) *Store {
 	}
 }
 
-func (s Store) Create(ctx context.Context, ntm topicmessagebus.TopicMessage) (uuid.UUID, error) {
+func (s Store) Create(ctx context.Context, ntm discussionBus.TopicMessage) (uuid.UUID, error) {
 	q := `
-		INSERT INTO topics_messages
+		INSERT INTO discussions
 			(message, date_created, date_updated, user_id, topic_id)
 		VALUES
 			($1, $2, $3, $4, $5)

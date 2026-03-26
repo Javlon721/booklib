@@ -1,24 +1,24 @@
-package topicmessagehandler
+package discussionHandler
 
 import (
 	"log/slog"
 	"net/http"
 
-	topicmessagebus "github.com/Javlon721/booklib/internal/bus/topicMessageBus"
+	discussionsBus "github.com/Javlon721/booklib/internal/bus/discussionBus"
 	"github.com/Javlon721/booklib/internal/handler/errs"
 	"github.com/Javlon721/booklib/internal/handler/middleware"
 	"github.com/gofiber/fiber/v3"
 )
 
 type Handler struct {
-	topicMessageBus *topicmessagebus.Business
-	logger          *slog.Logger
+	discussionsBus *discussionsBus.Business
+	logger         *slog.Logger
 }
 
-func NewHandler(topicMessageBus *topicmessagebus.Business, logger *slog.Logger) *Handler {
+func NewHandler(discussionsBus *discussionsBus.Business, logger *slog.Logger) *Handler {
 	return &Handler{
-		topicMessageBus: topicMessageBus,
-		logger:          logger,
+		discussionsBus: discussionsBus,
+		logger:         logger,
 	}
 }
 
@@ -43,7 +43,7 @@ func (h Handler) Create(c fiber.Ctx) error {
 		return errs.New(errs.InvalidArgument, err)
 	}
 
-	topicMessage, err := h.topicMessageBus.Create(ctx, busTopicMessage)
+	topicMessage, err := h.discussionsBus.Create(ctx, busTopicMessage)
 
 	if err != nil {
 		return errs.New(errs.Internal, err)

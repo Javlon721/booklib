@@ -1,21 +1,21 @@
-package topicmessagehandler
+package discussionHandler
 
 import (
 	"log/slog"
 
-	topicmessagebus "github.com/Javlon721/booklib/internal/bus/topicMessageBus"
+	discussionsBus "github.com/Javlon721/booklib/internal/bus/discussionBus"
 	"github.com/gofiber/fiber/v3"
 )
 
 func Routes(
 	mux fiber.Router,
-	topicMessageBus *topicmessagebus.Business,
+	discussionsBus *discussionsBus.Business,
 	logger *slog.Logger,
 	authMid fiber.Handler,
 ) {
 	router := mux.Group("/topicMessages")
 
-	handler := NewHandler(topicMessageBus, logger)
+	handler := NewHandler(discussionsBus, logger)
 
 	router.Post("/", authMid, handler.Create)
 }

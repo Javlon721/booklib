@@ -1,4 +1,4 @@
-package topicmessagebus
+package discussionBus
 
 import (
 	"context"
