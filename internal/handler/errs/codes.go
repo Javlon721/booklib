@@ -10,6 +10,7 @@ const (
 	InvalidArgument
 	PermissionDenied
 	Unauthenticated
+	UpgradeRequired
 )
 
 var codeNames = map[ErrCode]string{
@@ -20,6 +21,7 @@ var codeNames = map[ErrCode]string{
 	InvalidArgument:  "invalid_argument",
 	PermissionDenied: "permission_denied",
 	Unauthenticated:  "unauthenticated",
+	UpgradeRequired:  "upgrade required",
 }
 
 var httpStatus = map[ErrCode]int{
@@ -30,4 +32,5 @@ var httpStatus = map[ErrCode]int{
 	InvalidArgument:  http.StatusBadRequest,
 	PermissionDenied: http.StatusForbidden,
 	Unauthenticated:  http.StatusUnauthorized,
+	UpgradeRequired:  http.StatusUpgradeRequired,
 }

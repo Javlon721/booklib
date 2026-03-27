@@ -1,6 +1,8 @@
 package chatHandler
 
 import (
+	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/gofiber/contrib/v3/websocket"
@@ -64,4 +66,20 @@ func (h *WebsoketHandler) UnRegister(chatID uuid.UUID, conn *websocket.Conn) {
 
 		delete(h.chats, chatID)
 	}
+}
+
+func (h *WebsoketHandler) ChatStats(chatID uuid.UUID) string {
+	chat, ok := h.GetChatByID(chatID)
+
+	if !ok {
+		return "no stats"
+	}
+
+	var builder strings.Builder
+
+	fmt.Fprintf(&builder, "ChatID: %s\n", chatID)
+
+	chat.Stats(&builder)
+
+	return builder.String()
 }

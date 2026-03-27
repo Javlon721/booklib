@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"time"
 
 	chatbus "github.com/Javlon721/booklib/internal/bus/chatBus"
 	"github.com/Javlon721/booklib/internal/handler/errs"
@@ -156,15 +155,19 @@ func (h Handler) GetPendingMessages(c fiber.Ctx) error {
 func (h Handler) Websoket(c *websocket.Conn) {
 	defer c.Close()
 
+	ctx, ok := c.Locals("context").(context.Context)
+
+	if !ok {
+		h.logger.Error("websocket getting context", "err", errs.New(errs.Internal, fmt.Errorf("there is no context")))
+		return
+	}
+
 	chatID, err := uuid.Parse(c.Params("chatID"))
 
 	if err != nil {
 		c.WriteMessage(websocket.CloseMessage, []byte(errs.InvalidArgument.String()))
 		return
 	}
-
-	ctx, cancelFunc := context.WithTimeout(context.Background(), time.Millisecond*300)
-	defer cancelFunc()
 
 	_, err = h.chatBus.GetChatByID(ctx, chatID)
 
@@ -210,4 +213,16 @@ func (h Handler) Websoket(c *websocket.Conn) {
 
 		broadcastCh <- string(msg)
 	}
+}
+
+func (h Handler) WebsoketStats(c fiber.Ctx) error {
+	chatID, err := uuid.Parse(c.Params("chatID"))
+
+	if err != nil {
+		return errs.New(errs.InvalidArgument, err)
+	}
+
+	stats := h.wsHandler.ChatStats(chatID)
+
+	return c.SendString(stats)
 }

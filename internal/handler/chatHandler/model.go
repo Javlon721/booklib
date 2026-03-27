@@ -3,6 +3,7 @@ package chatHandler
 import (
 	"context"
 	"fmt"
+	"io"
 	"sync"
 	"time"
 
@@ -130,6 +131,7 @@ func toHandlerMessages(messages []chatbus.Message) []Message {
 
 // -------------------------------------------------------------------------
 type Client struct {
+	userID    uuid.UUID
 	isClosing bool
 	sync.Mutex
 }
@@ -180,7 +182,21 @@ func (g *Group) Listen() error {
 }
 
 func (g *Group) Register(conn *websocket.Conn) {
-	g.connected[conn] = &Client{}
+	ctx, ok := conn.Locals("context").(context.Context)
+
+	if !ok {
+		panic(fmt.Errorf("websocket getting context: %w", fmt.Errorf("there is no context")))
+	}
+
+	userID, err := middleware.GetUserID(ctx)
+
+	if err != nil {
+		panic(fmt.Errorf("websocket getting userID: %w", err))
+	}
+
+	g.connected[conn] = &Client{
+		userID: userID,
+	}
 }
 
 func (g *Group) UnRegister(conn *websocket.Conn) {
@@ -215,6 +231,26 @@ func (g *Group) CloseBroadcast() {
 
 func (g *Group) Broadcast(data string) {
 	g.broadcastCh <- data
+}
+
+func (g *Group) Stats(report io.Writer) {
+	fmt.Fprintf(report, "\tConnected %d users\n", g.Length())
+	fmt.Fprintf(report, "------------------------------\n")
+
+	for _, client := range g.connected {
+		fmt.Fprintf(report, "\tuserID: %s\n", client.userID)
+
+		var status string
+
+		if client.isClosing {
+			status = "connection closed"
+		} else {
+			status = "connection alive"
+		}
+
+		fmt.Fprintf(report, "\tstatus: %s\n", status)
+		fmt.Fprintf(report, "------------------------------\n")
+	}
 }
 
 func NewGroup() *Group {
