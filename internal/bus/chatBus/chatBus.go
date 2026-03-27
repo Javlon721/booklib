@@ -19,6 +19,7 @@ var (
 type Store interface {
 	CreateChat(context.Context, Chat) (uuid.UUID, error)
 	GetChatBy(context.Context, uuid.UUID, uuid.UUID) (Chat, error)
+	GetChatByID(context.Context, uuid.UUID) (Chat, error)
 	CreateMessage(context.Context, Message) (uuid.UUID, error)
 	GetMessagesByStatus(context.Context, uuid.UUID, uuid.UUID, string) ([]Message, error)
 }
@@ -66,6 +67,10 @@ func (bus Business) GetChatBy(ctx context.Context, user1, user2 uuid.UUID) (Chat
 	}
 
 	return bus.store.GetChatBy(ctx, user1, user2)
+}
+
+func (bus Business) GetChatByID(ctx context.Context, chatID uuid.UUID) (Chat, error) {
+	return bus.store.GetChatByID(ctx, chatID)
 }
 
 func (bus Business) CreateMessage(ctx context.Context, nm NewMessage) (Message, error) {

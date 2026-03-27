@@ -1,9 +1,12 @@
 package chatHandler
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
+	"time"
 
 	chatbus "github.com/Javlon721/booklib/internal/bus/chatBus"
 	"github.com/Javlon721/booklib/internal/handler/errs"
@@ -151,6 +154,8 @@ func (h Handler) GetPendingMessages(c fiber.Ctx) error {
 }
 
 func (h Handler) Websoket(c *websocket.Conn) {
+	defer c.Close()
+
 	chatID, err := uuid.Parse(c.Params("chatID"))
 
 	if err != nil {
@@ -158,13 +163,29 @@ func (h Handler) Websoket(c *websocket.Conn) {
 		return
 	}
 
+	ctx, cancelFunc := context.WithTimeout(context.Background(), time.Millisecond*300)
+	defer cancelFunc()
+
+	_, err = h.chatBus.GetChatByID(ctx, chatID)
+
+	if err != nil {
+		var message error
+
+		if errors.Is(err, chatbus.ErrChatNotFound) {
+			message = err
+		} else {
+			message = fmt.Errorf("some error occured")
+		}
+
+		h.logger.Error("websocket retrieve chat", "err", err)
+
+		c.WriteMessage(websocket.CloseMessage, []byte(message.Error()))
+
+		return
+	}
+
 	broadcastCh := h.wsHandler.Register(chatID, c)
-
-	defer func() {
-		h.wsHandler.UnRegister(chatID, c)
-
-		c.Close()
-	}()
+	defer h.wsHandler.UnRegister(chatID, c)
 
 	for {
 		mt, msg, err := c.ReadMessage()

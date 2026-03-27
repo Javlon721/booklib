@@ -72,6 +72,29 @@ func (s Store) GetChatBy(ctx context.Context, user1, user2 uuid.UUID) (chatbus.C
 	return toBusChat(chat)
 }
 
+func (s Store) GetChatByID(ctx context.Context, chatID uuid.UUID) (chatbus.Chat, error) {
+	q := `
+		SELECT user1, user2, date_updated, date_created
+			FROM chats
+		WHERE chat_id = $1;
+	`
+
+	chat := chatDB{
+		ID: chatID,
+	}
+
+	row := s.db.QueryRow(ctx, q, chatID)
+
+	if err := sqldb.ExtractPosgreErr(row.Scan(&chat.User1, &chat.User2, &chat.DateUpdated, &chat.DateCreated)); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return chatbus.Chat{}, chatbus.ErrChatNotFound
+		}
+		return chatbus.Chat{}, err
+	}
+
+	return toBusChat(chat)
+}
+
 func (s Store) CreateMessage(ctx context.Context, nm chatbus.Message) (uuid.UUID, error) {
 	q := `
 		INSERT INTO messages
