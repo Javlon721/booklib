@@ -6,6 +6,8 @@ import (
 	"time"
 
 	authbus "github.com/Javlon721/booklib/internal/bus/authBus"
+	chatbus "github.com/Javlon721/booklib/internal/bus/chatBus"
+	chatStore "github.com/Javlon721/booklib/internal/bus/chatBus/store"
 	discussionBus "github.com/Javlon721/booklib/internal/bus/discussionBus"
 	discussionStore "github.com/Javlon721/booklib/internal/bus/discussionBus/store"
 	topicbus "github.com/Javlon721/booklib/internal/bus/topicBus"
@@ -14,6 +16,7 @@ import (
 	userStore "github.com/Javlon721/booklib/internal/bus/userBus/store"
 	"github.com/Javlon721/booklib/internal/db/postgres"
 	authhandler "github.com/Javlon721/booklib/internal/handler/authHandler"
+	"github.com/Javlon721/booklib/internal/handler/chatHandler"
 	discussionHandler "github.com/Javlon721/booklib/internal/handler/discussionHandler"
 	"github.com/Javlon721/booklib/internal/handler/middleware"
 	topichandler "github.com/Javlon721/booklib/internal/handler/topicHandler"
@@ -131,6 +134,9 @@ func run(logger *slog.Logger) error {
 	discussionStore := discussionStore.New(dbConn, logger)
 	discussionBus := discussionBus.NewBusiness(logger, discussionStore)
 
+	chatStore := chatStore.New(dbConn, logger)
+	chatBus := chatbus.NewBusiness(logger, chatStore)
+
 	// -------------------------------------------------------------------------
 	// Auth Middleware
 
@@ -147,6 +153,8 @@ func run(logger *slog.Logger) error {
 	topichandler.Routes(appV1, topicBus, logger, authMid)
 
 	discussionHandler.Routes(appV1, discussionBus, logger, authMid)
+
+	chatHandler.Routes(appV1, chatBus, logger, authMid)
 
 	return app.Listen(apiHost)
 }
