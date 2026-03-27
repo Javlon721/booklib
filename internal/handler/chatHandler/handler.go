@@ -15,16 +15,16 @@ import (
 )
 
 type Handler struct {
-	chatBus       *chatbus.Business
-	logger        *slog.Logger
-	wsConnections map[uuid.UUID]*Group
+	chatBus   *chatbus.Business
+	logger    *slog.Logger
+	wsHandler *WebsoketHandler
 }
 
 func NewHandler(chatBus *chatbus.Business, logger *slog.Logger) *Handler {
 	return &Handler{
-		chatBus:       chatBus,
-		logger:        logger,
-		wsConnections: map[uuid.UUID]*Group{},
+		chatBus:   chatBus,
+		logger:    logger,
+		wsHandler: NewWebsoketHandler(),
 	}
 }
 
@@ -158,27 +158,13 @@ func (h Handler) Websoket(c *websocket.Conn) {
 		return
 	}
 
-	group, ok := h.wsConnections[chatID]
-
-	if !ok {
-		group = NewGroup()
-
-		go group.Listen()
-
-		h.wsConnections[chatID] = group
-	}
+	broadcastCh := h.wsHandler.Register(chatID, c)
 
 	defer func() {
-		isGroupActive := group.UnRegister(c)
-
-		if !isGroupActive {
-			delete(h.wsConnections, chatID)
-		}
+		h.wsHandler.UnRegister(chatID, c)
 
 		c.Close()
 	}()
-
-	group.Register(c)
 
 	for {
 		mt, msg, err := c.ReadMessage()
@@ -186,7 +172,7 @@ func (h Handler) Websoket(c *websocket.Conn) {
 		if err != nil {
 			h.logger.Error("websocket read", "err", err)
 
-			c.WriteMessage(websocket.CloseMessage, []byte("enexpected error while reading"))
+			c.WriteMessage(websocket.CloseMessage, []byte("unexpected error while reading"))
 
 			return
 		}
@@ -201,6 +187,6 @@ func (h Handler) Websoket(c *websocket.Conn) {
 			continue
 		}
 
-		group.Broadcast(string(msg))
+		broadcastCh <- string(msg)
 	}
 }
