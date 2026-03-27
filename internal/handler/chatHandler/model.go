@@ -3,12 +3,14 @@ package chatHandler
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	chatbus "github.com/Javlon721/booklib/internal/bus/chatBus"
 	"github.com/Javlon721/booklib/internal/handler/errs"
 	"github.com/Javlon721/booklib/internal/handler/middleware"
 	"github.com/Javlon721/booklib/internal/types/name"
+	"github.com/gofiber/contrib/v3/websocket"
 	"github.com/google/uuid"
 )
 
@@ -124,4 +126,75 @@ func toHandlerMessages(messages []chatbus.Message) []Message {
 	}
 
 	return result
+}
+
+// -------------------------------------------------------------------------
+type Client struct {
+	isClosing bool
+	sync.Mutex
+}
+
+type Group struct {
+	connected map[*websocket.Conn]*Client
+	broadcast chan string
+}
+
+func (g *Group) Listen() {
+	for message := range g.broadcast {
+		data := []byte(message)
+
+		for v := range g.connected {
+			go func(conn *websocket.Conn, client *Client) {
+				client.Lock()
+				defer client.Unlock()
+
+				if client.isClosing {
+					return
+				}
+
+				if err := conn.WriteMessage(websocket.TextMessage, data); err != nil {
+					client.isClosing = true
+
+					conn.WriteMessage(websocket.CloseMessage, []byte{})
+
+					conn.Close()
+
+					g.UnRegister(conn)
+				}
+
+			}(v, g.connected[v])
+
+		}
+	}
+}
+
+func (g *Group) Register(conn *websocket.Conn) {
+	g.connected[conn] = &Client{}
+}
+
+func (g *Group) UnRegister(conn *websocket.Conn) bool {
+	delete(g.connected, conn)
+
+	if len(g.connected) > 0 {
+		return true
+	}
+
+	g.CloseBroadcast()
+
+	return false
+}
+
+func (g *Group) CloseBroadcast() {
+	close(g.broadcast)
+}
+
+func (g *Group) Broadcast(data string) {
+	g.broadcast <- data
+}
+
+func NewGroup() *Group {
+	return &Group{
+		connected: map[*websocket.Conn]*Client{},
+		broadcast: make(chan string),
+	}
 }

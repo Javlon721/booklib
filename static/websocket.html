@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<title>Chat Example</title>
+		<script type="text/javascript">
+			window.onload = function () {
+				var conn;
+				var msgInput = document.getElementById('msg');
+				var log = document.getElementById('log');
+				var chatIdInput = document.getElementById('chatId');
+
+				function appendLog(item) {
+					var doScroll =
+						log.scrollTop > log.scrollHeight - log.clientHeight - 1;
+					log.appendChild(item);
+					if (doScroll) {
+						log.scrollTop = log.scrollHeight - log.clientHeight;
+					}
+				}
+
+				// 🔌 connect button
+				document.getElementById('connect').onclick = function () {
+					var chatId = chatIdInput.value.trim();
+
+					if (!chatId) {
+						alert("Enter chat ID");
+						return;
+					}
+
+					var wsUrl =
+						'ws://' +
+						document.location.host +
+						'/api/v1/chats/ws/' +
+						chatId;
+
+					conn = new WebSocket(wsUrl);
+					console.log('websocket url:', wsUrl);
+
+					conn.onclose = function () {
+						var item = document.createElement('div');
+						item.innerHTML = '<b>Connection closed.</b>';
+						appendLog(item);
+					};
+
+					conn.onmessage = function (evt) {
+						var messages = evt.data.split('\n');
+						for (var i = 0; i < messages.length; i++) {
+							var item = document.createElement('div');
+							item.innerText = messages[i];
+							appendLog(item);
+						}
+					};
+				};
+
+				// 📤 send message
+				document.getElementById('form').onsubmit = function () {
+					if (!conn) return false;
+					if (!msgInput.value) return false;
+
+					conn.send(msgInput.value);
+					msgInput.value = '';
+					return false;
+				};
+			};
+		</script>
+
+		<style>
+			html {
+				overflow: hidden;
+			}
+			body {
+				margin: 0;
+				background: gray;
+			}
+			#log {
+				background: white;
+				position: absolute;
+				top: 3em;
+				left: 0.5em;
+				right: 0.5em;
+				bottom: 3em;
+				overflow: auto;
+				padding: 0.5em;
+			}
+			#top {
+				padding: 0.5em;
+			}
+			#form {
+				position: absolute;
+				bottom: 1em;
+				width: 100%;
+				padding: 0 0.5em;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="top">
+			<input type="text" id="chatId" placeholder="Enter chat ID" />
+			<button id="connect">Connect</button>
+		</div>
+
+		<div id="log"></div>
+
+		<form id="form">
+			<input type="text" id="msg" size="64" autocomplete="off" />
+			<input type="submit" value="Send" />
+		</form>
+	</body>
+</html>

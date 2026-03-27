@@ -3,6 +3,7 @@ package main
 import (
 	"log/slog"
 	"os"
+	"path"
 	"time"
 
 	authbus "github.com/Javlon721/booklib/internal/bus/authBus"
@@ -22,6 +23,7 @@ import (
 	topichandler "github.com/Javlon721/booklib/internal/handler/topicHandler"
 	userhandler "github.com/Javlon721/booklib/internal/handler/userHandler"
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/static"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
@@ -114,6 +116,10 @@ func run(logger *slog.Logger) error {
 
 	appV1 := app.Group("/api/v1")
 
+	wd, _ := os.Getwd()
+	staticDir := path.Join(wd, "static")
+
+	app.Use("/static", static.New(staticDir))
 	// -------------------------------------------------------------------------
 	// Initialize Handlers
 

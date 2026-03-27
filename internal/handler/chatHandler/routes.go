@@ -4,6 +4,7 @@ import (
 	"log/slog"
 
 	chatbus "github.com/Javlon721/booklib/internal/bus/chatBus"
+	"github.com/gofiber/contrib/v3/websocket"
 	"github.com/gofiber/fiber/v3"
 )
 
@@ -21,4 +22,7 @@ func Routes(
 	router.Post("/chat/:chatID", authMid, handler.CreateMessage)
 	router.Get("/chat/:userID", authMid, handler.GetChatBy)
 	router.Get("/messages/:chatID", authMid, handler.GetPendingMessages)
+
+	// -------------------------------------------------------------------------
+	router.Get("/ws/:chatID", websocket.New(handler.Websoket))
 }
