@@ -10,46 +10,46 @@ import (
 )
 
 type WsHandler struct {
-	shards []*Shard
-	c      int
+	chats []*Chats
+	c     int
 }
 
 func NewWsHandler(c int) *WsHandler {
-	shards := make([]*Shard, 0, c)
+	chats := make([]*Chats, 0, c)
 
 	for range c {
-		shards = append(shards, NewShard())
+		chats = append(chats, NewChats())
 	}
 
 	return &WsHandler{
-		shards: shards,
-		c:      c,
+		chats: chats,
+		c:     c,
 	}
 }
 
 func (ws *WsHandler) Register(chatID uuid.UUID, conn *websocket.Conn) (chan<- string, error) {
-	shard, err := ws.GetShardBy(chatID)
+	chats, err := ws.GetChatsBy(chatID)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return shard.Register(chatID, conn), nil
+	return chats.Register(chatID, conn), nil
 }
 
 func (ws *WsHandler) UnRegister(chatID uuid.UUID, conn *websocket.Conn) error {
-	shard, err := ws.GetShardBy(chatID)
+	chats, err := ws.GetChatsBy(chatID)
 
 	if err != nil {
 		return err
 	}
 
-	shard.UnRegister(chatID, conn)
+	chats.UnRegister(chatID, conn)
 
 	return nil
 }
 
-func (ws *WsHandler) GetShardBy(chatID uuid.UUID) (*Shard, error) {
+func (ws *WsHandler) GetChatsBy(chatID uuid.UUID) (*Chats, error) {
 	h, err := hasher(chatID.String())
 
 	if err != nil {
@@ -58,21 +58,23 @@ func (ws *WsHandler) GetShardBy(chatID uuid.UUID) (*Shard, error) {
 
 	pos := h % ws.c
 
-	return ws.shards[pos], nil
+	return ws.chats[pos], nil
 }
 
-type Shard struct {
+// -------------------------------------------------------------------------
+
+type Chats struct {
 	chats map[uuid.UUID]*Group
 	sync.RWMutex
 }
 
-func NewShard() *Shard {
-	return &Shard{
+func NewChats() *Chats {
+	return &Chats{
 		chats: map[uuid.UUID]*Group{},
 	}
 }
 
-func (h *Shard) GetChatByID(chatID uuid.UUID) (*Group, bool) {
+func (h *Chats) GetChatByID(chatID uuid.UUID) (*Group, bool) {
 	h.RLock()
 	defer h.RUnlock()
 
@@ -81,7 +83,7 @@ func (h *Shard) GetChatByID(chatID uuid.UUID) (*Group, bool) {
 	return chat, ok
 }
 
-func (h *Shard) Register(chatID uuid.UUID, conn *websocket.Conn) chan<- string {
+func (h *Chats) Register(chatID uuid.UUID, conn *websocket.Conn) chan<- string {
 	chat, ok := h.GetChatByID(chatID)
 
 	h.Lock()
@@ -101,7 +103,7 @@ func (h *Shard) Register(chatID uuid.UUID, conn *websocket.Conn) chan<- string {
 	return chat.broadcastCh
 }
 
-func (h *Shard) UnRegister(chatID uuid.UUID, conn *websocket.Conn) {
+func (h *Chats) UnRegister(chatID uuid.UUID, conn *websocket.Conn) {
 	chat, ok := h.GetChatByID(chatID)
 
 	if !ok {
@@ -120,7 +122,7 @@ func (h *Shard) UnRegister(chatID uuid.UUID, conn *websocket.Conn) {
 	}
 }
 
-func (h *Shard) ChatStats(chatID uuid.UUID) string {
+func (h *Chats) ChatStats(chatID uuid.UUID) string {
 	chat, ok := h.GetChatByID(chatID)
 
 	if !ok {

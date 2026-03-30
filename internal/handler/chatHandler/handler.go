@@ -229,7 +229,7 @@ func (h Handler) WebsoketStats(c fiber.Ctx) error {
 		return errs.New(errs.InvalidArgument, err)
 	}
 
-	chats, err := h.wsHandler.GetShardBy(chatID)
+	chats, err := h.wsHandler.GetChatsBy(chatID)
 
 	if err != nil {
 		return errs.New(errs.Internal, err)
