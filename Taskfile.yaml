@@ -1,9 +1,11 @@
 version: '3'
 
 vars:
-  EXEC_FILE: './cmd/booklib'
-  OUTPUT: './bin/booklib/main'
   POSTGRES_URI: 'postgres://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST/$POSTGRES_DB_NAME'
+  BOOKLIB:
+    map: { OUTPUT: './bin/booklib/main', EXEC_FILE: './cmd/booklib' }
+  WS_CLIENT:
+    map: { OUTPUT: './bin/ws/client', EXEC_FILE: './cmd/ws' }
 
 dotenv: ['.env']
 
@@ -15,8 +17,27 @@ tasks:
   run:
     deps:
       - task: build
+        vars:
+          EXEC_FILE: '{{.EXEC_FILE}}'
+          OUTPUT: '{{.OUTPUT}}'
     cmd: '{{.OUTPUT}}'
     silent: true
+
+  booklib:
+    aliases: [rb]
+    cmds:
+      - task: run
+        vars:
+          OUTPUT: '{{.BOOKLIB.OUTPUT}}'
+          EXEC_FILE: '{{.BOOKLIB.EXEC_FILE}}'
+
+  wsClient:
+    aliases: [wcl]
+    cmds:
+      - task: run
+        vars:
+          OUTPUT: '{{.WS_CLIENT.OUTPUT}}'
+          EXEC_FILE: '{{.WS_CLIENT.EXEC_FILE}}'
 
   db:
     cmd: docker compose up db -d
@@ -36,7 +57,7 @@ tasks:
     vars:
       WD: '{{.USER_WORKING_DIR}}/migrations'
     silent: true
-  
+
   tidy:
     aliases: [td]
     cmd: go mod tidy
