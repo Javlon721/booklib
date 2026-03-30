@@ -20,7 +20,7 @@ tasks:
         vars:
           EXEC_FILE: '{{.EXEC_FILE}}'
           OUTPUT: '{{.OUTPUT}}'
-    cmd: '{{.OUTPUT}}'
+    cmd: '{{.OUTPUT}} {{.CLI_ARGS}}'
     silent: true
 
   booklib:
