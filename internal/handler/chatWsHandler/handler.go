@@ -8,6 +8,7 @@ import (
 
 	chatbus "github.com/Javlon721/booklib/internal/bus/chatBus"
 	"github.com/Javlon721/booklib/internal/handler/errs"
+	"github.com/Javlon721/booklib/internal/handler/middleware"
 	"github.com/gofiber/contrib/v3/websocket"
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
@@ -37,6 +38,13 @@ func (h Handler) Websoket(c *websocket.Conn) {
 		return
 	}
 
+	userID, err := middleware.GetUserID(ctx)
+
+	if err != nil {
+		c.WriteMessage(websocket.CloseMessage, []byte(fmt.Errorf("websocket getting userID: %w", err).Error()))
+		return
+	}
+
 	chatID, err := uuid.Parse(c.Params("chatID"))
 
 	if err != nil {
@@ -62,7 +70,7 @@ func (h Handler) Websoket(c *websocket.Conn) {
 		return
 	}
 
-	broadcastCh, err := h.wsHandler.Register(chatID, c)
+	broadcastCh, err := h.wsHandler.Register(userID, chatID, c)
 
 	if err != nil {
 		h.logger.Error("websocket register chat", "err", err)
