@@ -19,14 +19,14 @@ import (
 type Handler struct {
 	chatBus   *chatbus.Business
 	logger    *slog.Logger
-	wsHandler *WebsoketHandler
+	wsHandler *WsHandler
 }
 
 func NewHandler(chatBus *chatbus.Business, logger *slog.Logger) *Handler {
 	return &Handler{
 		chatBus:   chatBus,
 		logger:    logger,
-		wsHandler: NewWebsoketHandler(),
+		wsHandler: NewWsHandler(4),
 	}
 }
 
@@ -187,7 +187,14 @@ func (h Handler) Websoket(c *websocket.Conn) {
 		return
 	}
 
-	broadcastCh := h.wsHandler.Register(chatID, c)
+	broadcastCh, err := h.wsHandler.Register(chatID, c)
+
+	if err != nil {
+		h.logger.Error("websocket register chat", "err", err)
+		c.WriteMessage(websocket.CloseMessage, []byte(err.Error()))
+		return
+	}
+
 	defer h.wsHandler.UnRegister(chatID, c)
 
 	for {
@@ -222,7 +229,11 @@ func (h Handler) WebsoketStats(c fiber.Ctx) error {
 		return errs.New(errs.InvalidArgument, err)
 	}
 
-	stats := h.wsHandler.ChatStats(chatID)
+	chats, err := h.wsHandler.GetShardBy(chatID)
 
-	return c.SendString(stats)
+	if err != nil {
+		return errs.New(errs.Internal, err)
+	}
+
+	return c.SendString(chats.ChatStats(chatID))
 }

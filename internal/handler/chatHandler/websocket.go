@@ -9,18 +9,70 @@ import (
 	"github.com/google/uuid"
 )
 
-type WebsoketHandler struct {
+type WsHandler struct {
+	shards []*Shard
+	c      int
+}
+
+func NewWsHandler(c int) *WsHandler {
+	shards := make([]*Shard, 0, c)
+
+	for range c {
+		shards = append(shards, NewShard())
+	}
+
+	return &WsHandler{
+		shards: shards,
+		c:      c,
+	}
+}
+
+func (ws *WsHandler) Register(chatID uuid.UUID, conn *websocket.Conn) (chan<- string, error) {
+	shard, err := ws.GetShardBy(chatID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return shard.Register(chatID, conn), nil
+}
+
+func (ws *WsHandler) UnRegister(chatID uuid.UUID, conn *websocket.Conn) error {
+	shard, err := ws.GetShardBy(chatID)
+
+	if err != nil {
+		return err
+	}
+
+	shard.UnRegister(chatID, conn)
+
+	return nil
+}
+
+func (ws *WsHandler) GetShardBy(chatID uuid.UUID) (*Shard, error) {
+	h, err := hasher(chatID.String())
+
+	if err != nil {
+		return nil, fmt.Errorf("getting conn hash: %w", err)
+	}
+
+	pos := h % ws.c
+
+	return ws.shards[pos], nil
+}
+
+type Shard struct {
 	chats map[uuid.UUID]*Group
 	sync.RWMutex
 }
 
-func NewWebsoketHandler() *WebsoketHandler {
-	return &WebsoketHandler{
+func NewShard() *Shard {
+	return &Shard{
 		chats: map[uuid.UUID]*Group{},
 	}
 }
 
-func (h *WebsoketHandler) GetChatByID(chatID uuid.UUID) (*Group, bool) {
+func (h *Shard) GetChatByID(chatID uuid.UUID) (*Group, bool) {
 	h.RLock()
 	defer h.RUnlock()
 
@@ -29,7 +81,7 @@ func (h *WebsoketHandler) GetChatByID(chatID uuid.UUID) (*Group, bool) {
 	return chat, ok
 }
 
-func (h *WebsoketHandler) Register(chatID uuid.UUID, conn *websocket.Conn) chan<- string {
+func (h *Shard) Register(chatID uuid.UUID, conn *websocket.Conn) chan<- string {
 	chat, ok := h.GetChatByID(chatID)
 
 	h.Lock()
@@ -49,7 +101,7 @@ func (h *WebsoketHandler) Register(chatID uuid.UUID, conn *websocket.Conn) chan<
 	return chat.broadcastCh
 }
 
-func (h *WebsoketHandler) UnRegister(chatID uuid.UUID, conn *websocket.Conn) {
+func (h *Shard) UnRegister(chatID uuid.UUID, conn *websocket.Conn) {
 	chat, ok := h.GetChatByID(chatID)
 
 	if !ok {
@@ -68,7 +120,7 @@ func (h *WebsoketHandler) UnRegister(chatID uuid.UUID, conn *websocket.Conn) {
 	}
 }
 
-func (h *WebsoketHandler) ChatStats(chatID uuid.UUID) string {
+func (h *Shard) ChatStats(chatID uuid.UUID) string {
 	chat, ok := h.GetChatByID(chatID)
 
 	if !ok {
