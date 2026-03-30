@@ -18,6 +18,7 @@ import (
 	"github.com/Javlon721/booklib/internal/db/postgres"
 	authhandler "github.com/Javlon721/booklib/internal/handler/authHandler"
 	"github.com/Javlon721/booklib/internal/handler/chatHandler"
+	"github.com/Javlon721/booklib/internal/handler/chatWsHandler"
 	discussionHandler "github.com/Javlon721/booklib/internal/handler/discussionHandler"
 	"github.com/Javlon721/booklib/internal/handler/middleware"
 	topichandler "github.com/Javlon721/booklib/internal/handler/topicHandler"
@@ -161,6 +162,8 @@ func run(logger *slog.Logger) error {
 	discussionHandler.Routes(appV1, discussionBus, logger, authMid)
 
 	chatHandler.Routes(appV1, chatBus, logger, authMid)
+
+	chatWsHandler.Routes(appV1, chatBus, logger, authMid)
 
 	return app.Listen(apiHost)
 }

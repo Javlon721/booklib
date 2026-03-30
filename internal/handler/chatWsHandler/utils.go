@@ -1,4 +1,4 @@
-package chatHandler
+package chatWsHandler
 
 import "hash/fnv"
 
