@@ -4,8 +4,6 @@ vars:
   POSTGRES_URI: 'postgres://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST/$POSTGRES_DB_NAME'
   BOOKLIB:
     map: { OUTPUT: './bin/booklib/main', EXEC_FILE: './cmd/booklib' }
-  WS_CLIENT:
-    map: { OUTPUT: './bin/ws/client', EXEC_FILE: './cmd/ws' }
 
 dotenv: ['.env']
 
@@ -30,14 +28,6 @@ tasks:
         vars:
           OUTPUT: '{{.BOOKLIB.OUTPUT}}'
           EXEC_FILE: '{{.BOOKLIB.EXEC_FILE}}'
-
-  wsClient:
-    aliases: [wcl]
-    cmds:
-      - task: run
-        vars:
-          OUTPUT: '{{.WS_CLIENT.OUTPUT}}'
-          EXEC_FILE: '{{.WS_CLIENT.EXEC_FILE}}'
 
   db:
     cmd: docker compose up db -d

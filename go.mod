@@ -3,7 +3,6 @@ module github.com/Javlon721/booklib
 go 1.25.0
 
 require (
-	github.com/coder/websocket v1.8.14
 	github.com/gofiber/contrib/v3/websocket v1.1.0
 	github.com/gofiber/fiber/v3 v3.1.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
