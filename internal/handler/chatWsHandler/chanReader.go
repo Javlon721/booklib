@@ -2,15 +2,17 @@ package chatWsHandler
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"io"
 )
 
 type chanReader struct {
 	ctx context.Context
-	rch <-chan string
+	rch <-chan any
 }
 
-func NewChanReader(ctx context.Context, rch <-chan string) *chanReader {
+func NewChanReader(ctx context.Context, rch <-chan any) *chanReader {
 	return &chanReader{
 		ctx: ctx,
 		rch: rch,
@@ -27,7 +29,13 @@ func (c *chanReader) Read(p []byte) (n int, err error) {
 			return 0, io.EOF
 		}
 
-		n = copy(p, data)
+		b, err := json.Marshal(data)
+
+		if err != nil {
+			return 0, err
+		}
+
+		n = copy(p, fmt.Append(b, "\n"))
 	}
 
 	return

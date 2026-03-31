@@ -146,8 +146,11 @@ func (h Handler) WebsoketChatsStats(c fiber.Ctx) error {
 
 	ctx := c.Context()
 
-	reports := chats.Stats(ctx)
+	reports := chats.StatsNew(ctx)
+
 	rch := NewChanReader(ctx, reports)
+
+	c.Response().Header.Add("Content-Type", "application/x-ndjson")
 
 	return c.SendStream(rch)
 }
@@ -155,9 +158,9 @@ func (h Handler) WebsoketChatsStats(c fiber.Ctx) error {
 func (h Handler) WebsoketShardsStats(c fiber.Ctx) error {
 	ctx := c.Context()
 
-	reports := h.wsHandler.Stats(ctx)
+	reports := h.wsHandler.StatsNew(ctx)
 	rch := NewChanReader(ctx, reports)
 
-	c.Response().Header.Add("Content-Type", "application/json")
+	c.Response().Header.Add("Content-Type", "application/x-ndjson")
 	return c.SendStream(rch)
 }

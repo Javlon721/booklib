@@ -179,13 +179,15 @@ func NewChat() *Chat {
 // -------------------------------------------------------------------------
 
 type Chats struct {
+	id    int
 	chats map[uuid.UUID]*Chat
 	sync.RWMutex
 }
 
-func NewChats() *Chats {
+func NewChats(id int) *Chats {
 	return &Chats{
 		chats: map[uuid.UUID]*Chat{},
+		id:    id,
 	}
 }
 
@@ -301,6 +303,38 @@ func (h *Chats) Stats(ctx context.Context) <-chan string {
 			}
 
 			time.Sleep(time.Second)
+		}
+	}()
+
+	return reports
+}
+
+type ShardStats struct {
+	ChatStats *ChatStats `json:"chat_stats,omitempty"`
+	ID        int        `json:"shard_id"`
+	IsEmpty   bool       `json:"is_empty"`
+}
+
+func (h *Chats) StatsNew(ctx context.Context) <-chan any {
+	reports := make(chan any)
+
+	go func() {
+		defer close(reports)
+
+		if len(h.chats) == 0 {
+			reports <- ShardStats{IsEmpty: true, ID: h.id}
+			return
+		}
+
+		for id, chat := range h.chats {
+			chatStats, _ := chat.StatsNew()
+			chatStats.ID = id.String()
+
+			select {
+			case <-ctx.Done():
+				return
+			case reports <- ShardStats{IsEmpty: false, ChatStats: &chatStats, ID: h.id}:
+			}
 		}
 	}()
 

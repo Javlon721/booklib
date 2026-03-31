@@ -17,8 +17,8 @@ type WsHandler struct {
 func NewWsHandler(c int) *WsHandler {
 	chats := make([]*Chats, 0, c)
 
-	for range c {
-		chats = append(chats, NewChats())
+	for i := range c {
+		chats = append(chats, NewChats(i))
 	}
 
 	return &WsHandler{
@@ -97,6 +97,47 @@ func (ws *WsHandler) Stats(ctx context.Context) <-chan string {
 
 	for idx, rch := range fanout {
 		go fanin(ctx, rch, idx+1)
+	}
+
+	go func() {
+		wg.Wait()
+		close(reports)
+	}()
+
+	return reports
+}
+
+func (ws *WsHandler) StatsNew(ctx context.Context) <-chan any {
+	reports := make(chan any)
+
+	fanout := make([]<-chan any, ws.c)
+
+	for idx, chats := range ws.chats {
+		fanout[idx] = chats.StatsNew(ctx)
+	}
+
+	var wg sync.WaitGroup
+
+	fanin := func(ctx context.Context, rch <-chan any) {
+		defer wg.Done()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case value, ok := <-rch:
+				if !ok {
+					return
+				}
+				reports <- value
+			}
+		}
+	}
+
+	wg.Add(ws.c)
+
+	for _, rch := range fanout {
+		go fanin(ctx, rch)
 	}
 
 	go func() {
