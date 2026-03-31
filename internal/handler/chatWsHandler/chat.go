@@ -3,10 +3,7 @@ package chatWsHandler
 import (
 	"context"
 	"fmt"
-	"io"
-	"strings"
 	"sync"
-	"time"
 
 	"github.com/gofiber/contrib/v3/websocket"
 	"github.com/google/uuid"
@@ -105,27 +102,7 @@ func (c *Chat) Broadcast(data string) {
 	c.broadcastCh <- data
 }
 
-func (c *Chat) Stats(report io.Writer) {
-	fmt.Fprintf(report, "\tConnected %d users\n", c.Length())
-	fmt.Fprintf(report, "------------------------------\n")
-
-	for _, client := range c.connected {
-		fmt.Fprintf(report, "\tuserID: %s\n", client.userID)
-
-		var status string
-
-		if client.isClosing {
-			status = "connection closed"
-		} else {
-			status = "connection alive"
-		}
-
-		fmt.Fprintf(report, "\tstatus: %s\n", status)
-		fmt.Fprintf(report, "------------------------------\n")
-	}
-}
-
-func (c *Chat) StatsNew() (ChatStats, bool) {
+func (c *Chat) Stats() (ChatStats, bool) {
 	if c.Length() == 0 {
 		return ChatStats{}, false
 	}
@@ -229,30 +206,14 @@ func (h *Chats) UnRegister(chatID uuid.UUID, conn *websocket.Conn) {
 	}
 }
 
-func (h *Chats) ChatStats(chatID uuid.UUID) string {
-	chat, ok := h.GetChatByID(chatID)
-
-	if !ok {
-		return "no stats"
-	}
-
-	var builder strings.Builder
-
-	fmt.Fprintf(&builder, "ChatID: %s\n", chatID)
-
-	chat.Stats(&builder)
-
-	return builder.String()
-}
-
-func (h *Chats) ChatStatsNew(chatID uuid.UUID) (ChatStats, bool) {
+func (h *Chats) ChatStats(chatID uuid.UUID) (ChatStats, bool) {
 	chat, ok := h.GetChatByID(chatID)
 
 	if !ok {
 		return ChatStats{}, false
 	}
 
-	stats, ok := chat.StatsNew()
+	stats, ok := chat.Stats()
 
 	if !ok {
 		return ChatStats{}, false
@@ -263,42 +224,7 @@ func (h *Chats) ChatStatsNew(chatID uuid.UUID) (ChatStats, bool) {
 	return stats, true
 }
 
-func (h *Chats) Stats(ctx context.Context) <-chan string {
-	reports := make(chan string)
-
-	go func() {
-		defer close(reports)
-
-		var builder strings.Builder
-		var idx int
-
-		if len(h.chats) == 0 {
-			reports <- "not stats\n"
-			return
-		}
-
-		for id, chat := range h.chats {
-			idx++
-
-			fmt.Fprintf(&builder, "%d. %s\n", idx, id)
-
-			chat.Stats(&builder)
-
-			select {
-			case <-ctx.Done():
-				return
-			case reports <- builder.String():
-				builder.Reset()
-			}
-
-			time.Sleep(time.Second)
-		}
-	}()
-
-	return reports
-}
-
-func (h *Chats) StatsNew(ctx context.Context) <-chan any {
+func (h *Chats) Stats(ctx context.Context) <-chan any {
 	reports := make(chan any)
 
 	go func() {
@@ -310,7 +236,7 @@ func (h *Chats) StatsNew(ctx context.Context) <-chan any {
 		}
 
 		for id, chat := range h.chats {
-			chatStats, _ := chat.StatsNew()
+			chatStats, _ := chat.Stats()
 			chatStats.ID = id.String()
 
 			select {

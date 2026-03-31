@@ -122,7 +122,7 @@ func (h Handler) WebsoketChatStats(c fiber.Ctx) error {
 		return errs.New(errs.Internal, err)
 	}
 
-	stats, ok := chats.ChatStatsNew(chatID)
+	stats, ok := chats.ChatStats(chatID)
 
 	if !ok {
 		return errs.New(errs.NotFound, fmt.Errorf("no stats"))
@@ -146,7 +146,7 @@ func (h Handler) WebsoketChatsStats(c fiber.Ctx) error {
 
 	ctx := c.Context()
 
-	reports := chats.StatsNew(ctx)
+	reports := chats.Stats(ctx)
 
 	rch := NewChanReader(ctx, reports)
 
@@ -158,7 +158,7 @@ func (h Handler) WebsoketChatsStats(c fiber.Ctx) error {
 func (h Handler) WebsoketShardsStats(c fiber.Ctx) error {
 	ctx := c.Context()
 
-	reports := h.wsHandler.StatsNew(ctx)
+	reports := h.wsHandler.Stats(ctx)
 	rch := NewChanReader(ctx, reports)
 
 	c.Response().Header.Add("Content-Type", "application/x-ndjson")
