@@ -105,17 +105,6 @@ func (c *Chat) Broadcast(data string) {
 	c.broadcastCh <- data
 }
 
-type ChatStats struct {
-	ID        string     `json:"chat_id"`
-	Connected int        `json:"connected"`
-	Users     []UserStat `json:"users"`
-}
-
-type UserStat struct {
-	ID     string `json:"user_id"`
-	Status string `json:"status"`
-}
-
 func (c *Chat) Stats(report io.Writer) {
 	fmt.Fprintf(report, "\tConnected %d users\n", c.Length())
 	fmt.Fprintf(report, "------------------------------\n")
@@ -307,12 +296,6 @@ func (h *Chats) Stats(ctx context.Context) <-chan string {
 	}()
 
 	return reports
-}
-
-type ShardStats struct {
-	ChatStats *ChatStats `json:"chat_stats,omitempty"`
-	ID        int        `json:"shard_id"`
-	IsEmpty   bool       `json:"is_empty"`
 }
 
 func (h *Chats) StatsNew(ctx context.Context) <-chan any {
