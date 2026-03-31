@@ -105,6 +105,17 @@ func (c *Chat) Broadcast(data string) {
 	c.broadcastCh <- data
 }
 
+type ChatStats struct {
+	ID        string     `json:"chat_id"`
+	Connected int        `json:"connected"`
+	Users     []UserStat `json:"users"`
+}
+
+type UserStat struct {
+	ID     string `json:"user_id"`
+	Status string `json:"status"`
+}
+
 func (c *Chat) Stats(report io.Writer) {
 	fmt.Fprintf(report, "\tConnected %d users\n", c.Length())
 	fmt.Fprintf(report, "------------------------------\n")
@@ -123,6 +134,38 @@ func (c *Chat) Stats(report io.Writer) {
 		fmt.Fprintf(report, "\tstatus: %s\n", status)
 		fmt.Fprintf(report, "------------------------------\n")
 	}
+}
+
+func (c *Chat) StatsNew() (ChatStats, bool) {
+	if c.Length() == 0 {
+		return ChatStats{}, false
+	}
+
+	result := ChatStats{
+		Connected: c.Length(),
+		Users:     make([]UserStat, c.Length()),
+	}
+
+	idx := 0
+
+	for _, client := range c.connected {
+		var status string
+
+		if client.isClosing {
+			status = "connection closed"
+		} else {
+			status = "connection alive"
+		}
+
+		result.Users[idx] = UserStat{
+			ID:     client.userID.String(),
+			Status: status,
+		}
+
+		idx++
+	}
+
+	return result, true
 }
 
 func NewChat() *Chat {
@@ -209,6 +252,24 @@ func (h *Chats) ChatStats(chatID uuid.UUID) string {
 	chat.Stats(&builder)
 
 	return builder.String()
+}
+
+func (h *Chats) ChatStatsNew(chatID uuid.UUID) (ChatStats, bool) {
+	chat, ok := h.GetChatByID(chatID)
+
+	if !ok {
+		return ChatStats{}, false
+	}
+
+	stats, ok := chat.StatsNew()
+
+	if !ok {
+		return ChatStats{}, false
+	}
+
+	stats.ID = chatID.String()
+
+	return stats, true
 }
 
 func (h *Chats) Stats(ctx context.Context) <-chan string {

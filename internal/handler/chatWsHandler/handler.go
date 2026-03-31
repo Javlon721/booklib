@@ -106,6 +106,9 @@ func (h Handler) Websoket(c *websocket.Conn) {
 	}
 }
 
+// -------------------------------------------------------------------------
+// Stats
+
 func (h Handler) WebsoketChatStats(c fiber.Ctx) error {
 	chatID, err := uuid.Parse(c.Params("chatID"))
 
@@ -119,7 +122,13 @@ func (h Handler) WebsoketChatStats(c fiber.Ctx) error {
 		return errs.New(errs.Internal, err)
 	}
 
-	return c.SendString(chats.ChatStats(chatID))
+	stats, ok := chats.ChatStatsNew(chatID)
+
+	if !ok {
+		return errs.New(errs.NotFound, fmt.Errorf("no stats"))
+	}
+
+	return c.JSON(stats)
 }
 
 func (h Handler) WebsoketChatsStats(c fiber.Ctx) error {
@@ -149,5 +158,6 @@ func (h Handler) WebsoketShardsStats(c fiber.Ctx) error {
 	reports := h.wsHandler.Stats(ctx)
 	rch := NewChanReader(ctx, reports)
 
+	c.Response().Header.Add("Content-Type", "application/json")
 	return c.SendStream(rch)
 }
