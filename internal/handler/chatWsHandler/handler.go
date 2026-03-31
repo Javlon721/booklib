@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strconv"
 
 	chatbus "github.com/Javlon721/booklib/internal/bus/chatBus"
 	"github.com/Javlon721/booklib/internal/handler/errs"
@@ -105,7 +106,7 @@ func (h Handler) Websoket(c *websocket.Conn) {
 	}
 }
 
-func (h Handler) WebsoketStats(c fiber.Ctx) error {
+func (h Handler) WebsoketChatStats(c fiber.Ctx) error {
 	chatID, err := uuid.Parse(c.Params("chatID"))
 
 	if err != nil {
@@ -119,4 +120,34 @@ func (h Handler) WebsoketStats(c fiber.Ctx) error {
 	}
 
 	return c.SendString(chats.ChatStats(chatID))
+}
+
+func (h Handler) WebsoketChatsStats(c fiber.Ctx) error {
+	idx, err := strconv.Atoi(c.Params("idx"))
+
+	if err != nil {
+		return errs.New(errs.InvalidArgument, err)
+	}
+
+	chats, err := h.wsHandler.GetChatsByIdx(idx)
+
+	if err != nil {
+		return errs.New(errs.Internal, err)
+	}
+
+	ctx := c.Context()
+
+	reports := chats.Stats(ctx)
+	rch := NewChanReader(ctx, reports)
+
+	return c.SendStream(rch)
+}
+
+func (h Handler) WebsoketShardsStats(c fiber.Ctx) error {
+	ctx := c.Context()
+
+	reports := h.wsHandler.Stats(ctx)
+	rch := NewChanReader(ctx, reports)
+
+	return c.SendStream(rch)
 }

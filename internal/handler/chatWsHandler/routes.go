@@ -21,6 +21,9 @@ func Routes(
 
 	wsUpgradeMid := middleware.WSUpgrade(logger)
 
+	router.Get("/stats", handler.WebsoketShardsStats)
+	router.Get("/stats/chat/:chatID", handler.WebsoketChatStats)
+	router.Get("/stats/:idx", handler.WebsoketChatsStats)
+
 	router.Get("/:chatID", authMid, wsUpgradeMid, websocket.New(handler.Websoket))
-	router.Get("/stats/:chatID", handler.WebsoketStats)
 }

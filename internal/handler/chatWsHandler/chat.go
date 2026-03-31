@@ -1,10 +1,12 @@
 package chatWsHandler
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/gofiber/contrib/v3/websocket"
 	"github.com/google/uuid"
@@ -207,4 +209,39 @@ func (h *Chats) ChatStats(chatID uuid.UUID) string {
 	chat.Stats(&builder)
 
 	return builder.String()
+}
+
+func (h *Chats) Stats(ctx context.Context) <-chan string {
+	reports := make(chan string)
+
+	go func() {
+		defer close(reports)
+
+		var builder strings.Builder
+		var idx int
+
+		if len(h.chats) == 0 {
+			reports <- "not stats\n"
+			return
+		}
+
+		for id, chat := range h.chats {
+			idx++
+
+			fmt.Fprintf(&builder, "%d. %s\n", idx, id)
+
+			chat.Stats(&builder)
+
+			select {
+			case <-ctx.Done():
+				return
+			case reports <- builder.String():
+				builder.Reset()
+			}
+
+			time.Sleep(time.Second)
+		}
+	}()
+
+	return reports
 }
