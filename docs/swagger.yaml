@@ -7,6 +7,46 @@ definitions:
       password:
         type: string
     type: object
+  chatHandler.Chat:
+    properties:
+      chat_id:
+        type: string
+      date_created:
+        type: string
+      date_updated:
+        type: string
+      user1:
+        type: string
+      user2:
+        type: string
+    type: object
+  chatHandler.Message:
+    properties:
+      chat_id:
+        type: string
+      content:
+        type: string
+      date_created:
+        type: string
+      date_updated:
+        type: string
+      id:
+        type: string
+      sender:
+        type: string
+      status:
+        type: string
+    type: object
+  chatHandler.NewChat:
+    properties:
+      reciever:
+        type: string
+    type: object
+  chatHandler.NewMessage:
+    properties:
+      content:
+        type: string
+    type: object
   discussionHandler.NewTopicMessage:
     properties:
       message:
@@ -127,6 +167,171 @@ paths:
       summary: Login user
       tags:
       - auth
+  /chats/chat:
+    post:
+      consumes:
+      - application/json
+      description: Creates new chat between users
+      parameters:
+      - description: JWT token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Create chat request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/chatHandler.NewChat'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/chatHandler.Chat'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errs.ErrResponce'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errs.ErrResponce'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/errs.ErrResponce'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/errs.ErrResponce'
+      summary: Create chat
+      tags:
+      - chats
+  /chats/chat/{chatID}:
+    post:
+      consumes:
+      - application/json
+      description: Creates new message between users
+      parameters:
+      - description: JWT token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Create new message request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/chatHandler.NewMessage'
+      - description: Chat id for creating new message
+        in: path
+        name: chatID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/chatHandler.Message'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errs.ErrResponce'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errs.ErrResponce'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/errs.ErrResponce'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/errs.ErrResponce'
+      summary: Create new message
+      tags:
+      - chats
+  /chats/chat/{userID}:
+    get:
+      description: Get chat by reciever (sender already included via JWT token)
+      parameters:
+      - description: JWT token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Reciever uuid
+        in: path
+        name: userID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/chatHandler.Chat'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errs.ErrResponce'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errs.ErrResponce'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/errs.ErrResponce'
+      summary: Get chat
+      tags:
+      - chats
+  /chats/messages/{chatID}:
+    get:
+      description: Gets only pending messages
+      parameters:
+      - description: JWT token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Reciever uuid
+        in: path
+        name: chatID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/chatHandler.Message'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errs.ErrResponce'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errs.ErrResponce'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/errs.ErrResponce'
+      summary: Get pending messages
+      tags:
+      - chats
   /topicMessages:
     post:
       consumes:

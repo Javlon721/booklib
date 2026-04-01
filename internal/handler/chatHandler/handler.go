@@ -25,6 +25,21 @@ func NewHandler(chatBus *chatbus.Business, logger *slog.Logger) *Handler {
 	}
 }
 
+// Create
+//
+// @Summary Create chat
+// @Description Creates new chat between users
+// @Tags chats
+// @Param Authorization header string true "JWT token"
+// @Param request body NewChat true "Create chat request body (sender already included via JWT token)"
+// @Accept json
+// @Produce json
+// @Success 201 {object} Chat
+// @Failure 400 {object} errs.ErrResponce
+// @Failure 401 {object} errs.ErrResponce
+// @Failure 403 {object} errs.ErrResponce
+// @Failure 409 {object} errs.ErrResponce
+// @Router /chats/chat [post]
 func (h Handler) CreateChat(c fiber.Ctx) error {
 	ctx := c.Context()
 
@@ -61,6 +76,19 @@ func (h Handler) CreateChat(c fiber.Ctx) error {
 	return c.Status(http.StatusCreated).JSON(toHandlerChat(chat))
 }
 
+// GetChatBy
+//
+// @Summary Get chat
+// @Description Get chat by reciever (sender already included via JWT token)
+// @Tags chats
+// @Param Authorization header string true "JWT token"
+// @Param userID path string true "Reciever uuid"
+// @Produce json
+// @Success 200 {object} Chat
+// @Failure 400 {object} errs.ErrResponce
+// @Failure 401 {object} errs.ErrResponce
+// @Failure 403 {object} errs.ErrResponce
+// @Router /chats/chat/{userID} [get]
 func (h Handler) GetChatBy(c fiber.Ctx) error {
 	ctx := c.Context()
 
@@ -93,6 +121,22 @@ func (h Handler) GetChatBy(c fiber.Ctx) error {
 	return c.JSON(toHandlerChat(chat))
 }
 
+// CreateMessage
+//
+// @Summary Create new message
+// @Description Creates new message between users
+// @Tags chats
+// @Param Authorization header string true "JWT token"
+// @Param request body NewMessage true "Create new message request body"
+// @Param chatID path string true "Chat id for creating new message"
+// @Accept json
+// @Produce json
+// @Success 201 {object} Message
+// @Failure 400 {object} errs.ErrResponce
+// @Failure 401 {object} errs.ErrResponce
+// @Failure 403 {object} errs.ErrResponce
+// @Failure 404 {object} errs.ErrResponce
+// @Router /chats/chat/{chatID} [post]
 func (h Handler) CreateMessage(c fiber.Ctx) error {
 	var newMessage NewMessage
 
@@ -123,6 +167,19 @@ func (h Handler) CreateMessage(c fiber.Ctx) error {
 	return c.Status(http.StatusCreated).JSON(toHandlerMessage(message))
 }
 
+// GetPendingMessages
+//
+// @Summary Get pending messages
+// @Description Gets only pending messages
+// @Tags chats
+// @Param Authorization header string true "JWT token"
+// @Param chatID path string true "Chat uuid"
+// @Produce json
+// @Success 200 {object} []Message
+// @Failure 400 {object} errs.ErrResponce
+// @Failure 401 {object} errs.ErrResponce
+// @Failure 403 {object} errs.ErrResponce
+// @Router /chats/messages/{chatID} [get]
 func (h Handler) GetPendingMessages(c fiber.Ctx) error {
 	ctx := c.Context()
 
