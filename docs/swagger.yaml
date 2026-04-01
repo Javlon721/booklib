@@ -12,17 +12,52 @@ definitions:
       error:
         type: string
     type: object
+  userhandler.NewUser:
+    properties:
+      email:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      password:
+        type: string
+      roles:
+        items:
+          type: string
+        type: array
+    type: object
+  userhandler.User:
+    properties:
+      date_created:
+        type: string
+      date_updated:
+        type: string
+      email:
+        type: string
+      first_name:
+        type: string
+      id:
+        type: string
+      last_name:
+        type: string
+      roles:
+        items:
+          type: string
+        type: array
+    type: object
 host: 127.0.0.1:8001
 info:
   contact: {}
   description: This is a sample server
   title: Booklib API
-  version: "2.0"
+  version: "1.0"
 paths:
   /auth/login:
     post:
       consumes:
       - application/json
+      description: logins user
       parameters:
       - description: User login request body
         in: body
@@ -52,4 +87,89 @@ paths:
       summary: Login user
       tags:
       - auth
+  /users:
+    post:
+      consumes:
+      - application/json
+      description: creates new user
+      parameters:
+      - description: Create user request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/userhandler.NewUser'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/userhandler.User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errs.ErrResponce'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/errs.ErrResponce'
+      summary: Create user
+      tags:
+      - users
+  /users/{userID}:
+    get:
+      description: gets user by id
+      parameters:
+      - description: JWT token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: User uuid
+        in: path
+        name: userID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/userhandler.User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errs.ErrResponce'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/errs.ErrResponce'
+      summary: Get user by id
+      tags:
+      - users
+  /users/me:
+    get:
+      description: gets user from "subject" field in JWT token
+      parameters:
+      - description: JWT token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/userhandler.User'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/errs.ErrResponce'
+      summary: Get current user
+      tags:
+      - users
 swagger: "2.0"

@@ -30,7 +30,7 @@ type Handler struct {
 // Login
 //
 // @Summary Login user
-// @Describtion logins user
+// @Description Logins user
 // @Tags auth
 // @Param request body AuthParams true "User login request body"
 // @Accept json

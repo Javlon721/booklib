@@ -25,6 +25,18 @@ func NewHandler(userBus *userbus.Business, logger *slog.Logger) *Handler {
 	}
 }
 
+// Create
+//
+// @Summary Create user
+// @Description Creates new user
+// @Tags users
+// @Param request body NewUser true "Create user request body"
+// @Accept json
+// @Produce json
+// @Success 201 {object} User
+// @Failure 400 {object} errs.ErrResponce
+// @Failure 409 {object} errs.ErrResponce
+// @Router /users [post]
 func (h Handler) Create(c fiber.Ctx) error {
 	var nu NewUser
 
@@ -52,6 +64,18 @@ func (h Handler) Create(c fiber.Ctx) error {
 	return c.JSON(toHandlerUser(user))
 }
 
+// GetUserByID
+//
+// @Summary Get user by id
+// @Description Gets user by id
+// @Tags users
+// @Param Authorization header string true "JWT token"
+// @Param userID path string true "User uuid"
+// @Produce json
+// @Success 200 {object} User
+// @Failure 400 {object} errs.ErrResponce
+// @Failure 404 {object} errs.ErrResponce
+// @Router /users/{userID} [get]
 func (h Handler) GetUserByID(c fiber.Ctx) error {
 	userID, err := uuid.Parse(c.Params("userID"))
 
@@ -71,6 +95,16 @@ func (h Handler) GetUserByID(c fiber.Ctx) error {
 	return c.JSON(toHandlerUser(user))
 }
 
+// GetMe
+//
+// @Summary Get current user
+// @Description Gets user from "subject" field in JWT token
+// @Tags users
+// @Param Authorization header string true "JWT token"
+// @Produce json
+// @Success 201 {object} User
+// @Failure 404 {object} errs.ErrResponce
+// @Router /users/me [get]
 func (h Handler) GetMe(c fiber.Ctx) error {
 	userID, err := middleware.GetUserID(c.Context())
 
