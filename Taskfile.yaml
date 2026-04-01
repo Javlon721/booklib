@@ -24,6 +24,7 @@ tasks:
   booklib:
     aliases: [rb]
     cmds:
+      - task: swagger
       - task: run
         vars:
           OUTPUT: '{{.BOOKLIB.OUTPUT}}'
@@ -51,3 +52,8 @@ tasks:
   tidy:
     aliases: [td]
     cmd: go mod tidy
+
+  swagger:
+    aliases: [sw]
+    cmds:
+      - swag init -g {{.BOOKLIB.EXEC_FILE}}/main.go --parseInternal

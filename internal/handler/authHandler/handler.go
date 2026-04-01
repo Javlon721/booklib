@@ -27,6 +27,19 @@ type Handler struct {
 	logger  *slog.Logger
 }
 
+// Login
+//
+// @Summary Login user
+// @Describtion logins user
+// @Tags auth
+// @Param request body AuthParams true "User login request body"
+// @Accept json
+// @Produce plain
+// @Success 200 {string} string
+// @Failure 400 {object} errs.ErrResponce
+// @Failure 401 {object} errs.ErrResponce
+// @Failure 403 {object} errs.ErrResponce
+// @Router /auth/login [post]
 func (h Handler) Login(c fiber.Ctx) error {
 	var payload AuthParams
 

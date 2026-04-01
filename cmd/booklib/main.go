@@ -28,12 +28,20 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
+
+	_ "github.com/Javlon721/booklib/docs"
+	swaggo "github.com/gofiber/contrib/v3/swaggo"
 )
 
 var (
 	apiHost = ":8001"
 )
 
+// @title Booklib API
+// @version 1.0
+// @description This is a sample server
+// @host 127.0.0.1:8001
+// @BasePath /api/v1
 func main() {
 	// -------------------------------------------------------------------------
 	// Initialize logger
@@ -106,6 +114,10 @@ func run(logger *slog.Logger) error {
 	var config = fiber.Config{ErrorHandler: middleware.Errors(logger)}
 
 	app := fiber.New(config)
+
+	// -------------------------------------------------------------------------
+	// Swagger
+	app.Get("/swagger/*", swaggo.HandlerDefault)
 
 	// -------------------------------------------------------------------------
 	// Add middlewares
