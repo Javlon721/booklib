@@ -61,6 +61,65 @@
                 }
             }
         },
+        "/topicMessages": {
+            "post": {
+                "description": "Creates new topic message (discussion)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "topicMessages"
+                ],
+                "summary": "Create topic message",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "JWT token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Create topic message request body",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/discussionHandler.NewTopicMessage"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/discussionHandler.TopicMessage"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/errs.ErrResponce"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/errs.ErrResponce"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/errs.ErrResponce"
+                        }
+                    }
+                }
+            }
+        },
         "/topics": {
             "get": {
                 "description": "Gets topics",
@@ -370,6 +429,40 @@
                     "type": "string"
                 },
                 "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "discussionHandler.NewTopicMessage": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "topic_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "discussionHandler.TopicMessage": {
+            "type": "object",
+            "properties": {
+                "date_created": {
+                    "type": "string"
+                },
+                "date_updated": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "topic_id": {
+                    "type": "string"
+                },
+                "user_id": {
                     "type": "string"
                 }
             }

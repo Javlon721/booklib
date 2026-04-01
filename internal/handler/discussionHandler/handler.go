@@ -22,6 +22,20 @@ func NewHandler(discussionsBus *discussionsBus.Business, logger *slog.Logger) *H
 	}
 }
 
+// Create
+//
+// @Summary Create topic message
+// @Description Creates new topic message (discussion)
+// @Tags topicMessages
+// @Param Authorization header string true "JWT token"
+// @Param request body NewTopicMessage true "Create topic message request body"
+// @Accept json
+// @Produce json
+// @Success 201 {object} TopicMessage
+// @Failure 400 {object} errs.ErrResponce
+// @Failure 401 {object} errs.ErrResponce
+// @Failure 403 {object} errs.ErrResponce
+// @Router /topicMessages [post]
 func (h Handler) Create(c fiber.Ctx) error {
 	var ntm NewTopicMessage
 

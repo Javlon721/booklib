@@ -7,6 +7,28 @@ definitions:
       password:
         type: string
     type: object
+  discussionHandler.NewTopicMessage:
+    properties:
+      message:
+        type: string
+      topic_id:
+        type: string
+    type: object
+  discussionHandler.TopicMessage:
+    properties:
+      date_created:
+        type: string
+      date_updated:
+        type: string
+      id:
+        type: string
+      message:
+        type: string
+      topic_id:
+        type: string
+      user_id:
+        type: string
+    type: object
   errs.ErrResponce:
     properties:
       error:
@@ -105,6 +127,45 @@ paths:
       summary: Login user
       tags:
       - auth
+  /topicMessages:
+    post:
+      consumes:
+      - application/json
+      description: Creates new topic message (discussion)
+      parameters:
+      - description: JWT token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Create topic message request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/discussionHandler.NewTopicMessage'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/discussionHandler.TopicMessage'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errs.ErrResponce'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errs.ErrResponce'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/errs.ErrResponce'
+      summary: Create topic message
+      tags:
+      - topicMessages
   /topics:
     get:
       description: Gets topics
