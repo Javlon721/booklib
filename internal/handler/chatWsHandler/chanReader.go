@@ -3,40 +3,44 @@ package chatWsHandler
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 )
 
 type chanReader struct {
 	ctx context.Context
-	rch <-chan any
+	pw  *io.PipeWriter
+	pr  *io.PipeReader
 }
 
-func NewChanReader(ctx context.Context, rch <-chan any) *chanReader {
+func NewChanReader(ctx context.Context) *chanReader {
+	pr, pw := io.Pipe()
 	return &chanReader{
 		ctx: ctx,
-		rch: rch,
+		pr:  pr,
+		pw:  pw,
 	}
 }
 
-func (c *chanReader) Read(p []byte) (n int, err error) {
-	select {
-	case <-c.ctx.Done():
-		return 0, io.EOF
+// make sure that rch should return valid json encodable data
+func (c *chanReader) Listen(rch <-chan any) {
+	defer c.pw.Close()
 
-	case data, ok := <-c.rch:
-		if !ok {
-			return 0, io.EOF
+	encoder := json.NewEncoder(c.pw)
+
+	for {
+		select {
+		case <-c.ctx.Done():
+			return
+		case value, ok := <-rch:
+			if !ok {
+				return
+			}
+
+			_ = encoder.Encode(value)
 		}
-
-		b, err := json.Marshal(data)
-
-		if err != nil {
-			return 0, err
-		}
-
-		n = copy(p, fmt.Append(b, "\n"))
 	}
+}
 
-	return
+func (c *chanReader) Read(b []byte) (n int, err error) {
+	return c.pr.Read(b)
 }
