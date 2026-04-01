@@ -29,6 +29,18 @@ func NewHandler(chatBus *chatbus.Business, logger *slog.Logger) *Handler {
 	}
 }
 
+// Websoket
+//
+// @Summary Websocket connection
+// @Description Websocket connection for chating
+// @Tags ws/chats
+// @Param Authorization header string true "JWT token"
+// @Param chatID path string true "Chat uuid"
+// @Produce plain
+// @Success 101 {string} string "Switching Protocols"
+// @Failure 400 {object} errs.ErrResponce
+// @Failure 426 {object} errs.ErrResponce
+// @Router /ws/chats/{shatID} [get]
 func (h Handler) Websoket(c *websocket.Conn) {
 	defer c.Close()
 
@@ -109,6 +121,17 @@ func (h Handler) Websoket(c *websocket.Conn) {
 // -------------------------------------------------------------------------
 // Stats
 
+// WebsoketChatStats
+//
+// @Summary Get ws chat stats
+// @Description Gets Websocket Chat stats
+// @Tags ws/chats
+// @Param chatID path string true "Chat uuid"
+// @Produce json
+// @Success 200 {object} []ChatStats
+// @Failure 400 {object} errs.ErrResponce
+// @Failure 404 {object} errs.ErrResponce
+// @Router /ws/chats/stats/chat/{chatID} [get]
 func (h Handler) WebsoketChatStats(c fiber.Ctx) error {
 	chatID, err := uuid.Parse(c.Params("chatID"))
 
@@ -131,6 +154,16 @@ func (h Handler) WebsoketChatStats(c fiber.Ctx) error {
 	return c.JSON(stats)
 }
 
+// WebsoketChatsStats
+//
+// @Summary Get ws chats stats
+// @Description Gets Websocket Chats stats
+// @Tags ws/chats
+// @Param idx path int true "Shard id"
+// @Produce application/x-ndjson
+// @Success 200 {object} []ShardStats
+// @Failure 400 {object} errs.ErrResponce
+// @Router /ws/chats/stats/{idx} [get]
 func (h Handler) WebsoketChatsStats(c fiber.Ctx) error {
 	idx, err := strconv.Atoi(c.Params("idx"))
 
@@ -157,6 +190,15 @@ func (h Handler) WebsoketChatsStats(c fiber.Ctx) error {
 	return c.SendStream(reader)
 }
 
+// WebsoketShardsStats
+//
+// @Summary Get ws shards stats
+// @Description Gets Websocket shards stats
+// @Tags ws/chats
+// @Produce application/x-ndjson
+// @Success 200 {object} []ShardStats
+// @Failure 400 {object} errs.ErrResponce
+// @Router /ws/chats/stats [get]
 func (h Handler) WebsoketShardsStats(c fiber.Ctx) error {
 	ctx := c.Context()
 

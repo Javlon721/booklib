@@ -83,7 +83,7 @@
                         "required": true
                     },
                     {
-                        "description": "Create chat request body",
+                        "description": "Create chat request body (sender already included via JWT token)",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -272,7 +272,7 @@
                     },
                     {
                         "type": "string",
-                        "description": "Reciever uuid",
+                        "description": "Chat uuid",
                         "name": "chatID",
                         "in": "path",
                         "required": true
@@ -667,6 +667,159 @@
                     }
                 }
             }
+        },
+        "/ws/chats/stats": {
+            "get": {
+                "description": "Gets Websocket shards stats",
+                "produces": [
+                    "application/x-ndjson"
+                ],
+                "tags": [
+                    "ws/chats"
+                ],
+                "summary": "Get ws shards stats",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/chatWsHandler.ShardStats"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/errs.ErrResponce"
+                        }
+                    }
+                }
+            }
+        },
+        "/ws/chats/stats/chat/{chatID}": {
+            "get": {
+                "description": "Gets Websocket Chat stats",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ws/chats"
+                ],
+                "summary": "Get ws chat stats",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Chat uuid",
+                        "name": "chatID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/chatWsHandler.ChatStats"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/errs.ErrResponce"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/errs.ErrResponce"
+                        }
+                    }
+                }
+            }
+        },
+        "/ws/chats/stats/{idx}": {
+            "get": {
+                "description": "Gets Websocket Chats stats",
+                "produces": [
+                    "application/x-ndjson"
+                ],
+                "tags": [
+                    "ws/chats"
+                ],
+                "summary": "Get ws chats stats",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Shard id",
+                        "name": "idx",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/chatWsHandler.ShardStats"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/errs.ErrResponce"
+                        }
+                    }
+                }
+            }
+        },
+        "/ws/chats/{shatID}": {
+            "get": {
+                "description": "Websocket connection for chating",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "ws/chats"
+                ],
+                "summary": "Websocket connection",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Chat uuid",
+                        "name": "chatID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "JWT token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "101": {
+                        "description": "Switching Protocols",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/errs.ErrResponce"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -739,6 +892,48 @@
             "type": "object",
             "properties": {
                 "content": {
+                    "type": "string"
+                }
+            }
+        },
+        "chatWsHandler.ChatStats": {
+            "type": "object",
+            "properties": {
+                "chat_id": {
+                    "type": "string"
+                },
+                "connected": {
+                    "type": "integer"
+                },
+                "users": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/chatWsHandler.UserStat"
+                    }
+                }
+            }
+        },
+        "chatWsHandler.ShardStats": {
+            "type": "object",
+            "properties": {
+                "chat_stats": {
+                    "$ref": "#/definitions/chatWsHandler.ChatStats"
+                },
+                "is_empty": {
+                    "type": "boolean"
+                },
+                "shard_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "chatWsHandler.UserStat": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string"
+                },
+                "user_id": {
                     "type": "string"
                 }
             }
