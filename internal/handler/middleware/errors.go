@@ -24,9 +24,9 @@ func Errors(logger *slog.Logger) fiber.ErrorHandler {
 		)
 
 		if e.Code.Equal(errs.Internal) {
-			return c.Status(e.HTTPStatus()).JSON(map[string]string{"error": "internal server error"})
+			return c.Status(e.HTTPStatus()).JSON(errs.ErrResponce{Error: "internal server error"})
 		}
 
-		return c.Status(e.HTTPStatus()).JSON(map[string]string{"error": e.Message})
+		return c.Status(e.HTTPStatus()).JSON(errs.ErrResponce{Error: e.Message})
 	}
 }
