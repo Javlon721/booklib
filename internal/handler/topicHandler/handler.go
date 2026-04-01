@@ -25,6 +25,21 @@ func NewHandler(topicBus *topicbus.Business, logger *slog.Logger) *Handler {
 	}
 }
 
+// Create
+//
+// @Summary Create topic
+// @Description Creates new topic
+// @Tags topics
+// @Param Authorization header string true "JWT token"
+// @Param request body NewTopic true "Create topic request body"
+// @Accept json
+// @Produce json
+// @Success 201 {object} Topic
+// @Failure 400 {object} errs.ErrResponce
+// @Failure 401 {object} errs.ErrResponce
+// @Failure 403 {object} errs.ErrResponce
+// @Failure 409 {object} errs.ErrResponce
+// @Router /topics [post]
 func (h Handler) Create(c fiber.Ctx) error {
 	var nt NewTopic
 
@@ -56,6 +71,17 @@ func (h Handler) Create(c fiber.Ctx) error {
 	return c.Status(http.StatusCreated).JSON(toHandlerTopic(topic))
 }
 
+// GetTopicByID
+//
+// @Summary Get topic by id
+// @Description Gets topic by id
+// @Tags topics
+// @Param topicID path string true "Topic id"
+// @Produce json
+// @Success 200 {object} Topic
+// @Failure 400 {object} errs.ErrResponce
+// @Failure 404 {object} errs.ErrResponce
+// @Router /topics/{topicID} [get]
 func (h Handler) GetTopicByID(c fiber.Ctx) error {
 	topicID, err := uuid.Parse(c.Params("topicID"))
 
@@ -75,6 +101,17 @@ func (h Handler) GetTopicByID(c fiber.Ctx) error {
 	return c.JSON(toHandlerTopic(topic))
 }
 
+// GetTopicByID
+//
+// @Summary Get topics
+// @Description Gets topics
+// @Tags topics
+// @Param created_by query string false "creator's uuid"
+// @Param title query string false "topic's title"
+// @Produce json
+// @Success 200 {object} []Topic
+// @Failure 400 {object} errs.ErrResponce
+// @Router /topics [get]
 func (h Handler) Query(c fiber.Ctx) error {
 	qp, err := parseQueryParams(c)
 

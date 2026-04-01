@@ -12,6 +12,24 @@ definitions:
       error:
         type: string
     type: object
+  topichandler.NewTopic:
+    properties:
+      title:
+        type: string
+    type: object
+  topichandler.Topic:
+    properties:
+      created_by:
+        type: string
+      date_created:
+        type: string
+      date_updated:
+        type: string
+      id:
+        type: string
+      title:
+        type: string
+    type: object
   userhandler.NewUser:
     properties:
       email:
@@ -57,7 +75,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: logins user
+      description: Logins user
       parameters:
       - description: User login request body
         in: body
@@ -87,11 +105,108 @@ paths:
       summary: Login user
       tags:
       - auth
+  /topics:
+    get:
+      description: Gets topics
+      parameters:
+      - description: creator's uuid
+        in: query
+        name: created_by
+        type: string
+      - description: topic's title
+        in: query
+        name: title
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/topichandler.Topic'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errs.ErrResponce'
+      summary: Get topics
+      tags:
+      - topics
+    post:
+      consumes:
+      - application/json
+      description: Creates new topic
+      parameters:
+      - description: JWT token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Create topic request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/topichandler.NewTopic'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/topichandler.Topic'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errs.ErrResponce'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errs.ErrResponce'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/errs.ErrResponce'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/errs.ErrResponce'
+      summary: Create topic
+      tags:
+      - topics
+  /topics/{topicID}:
+    get:
+      description: Gets topic by id
+      parameters:
+      - description: Topic id
+        in: path
+        name: topicID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/topichandler.Topic'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errs.ErrResponce'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/errs.ErrResponce'
+      summary: Get topic by id
+      tags:
+      - topics
   /users:
     post:
       consumes:
       - application/json
-      description: creates new user
+      description: Creates new user
       parameters:
       - description: Create user request body
         in: body
@@ -119,7 +234,7 @@ paths:
       - users
   /users/{userID}:
     get:
-      description: gets user by id
+      description: Gets user by id
       parameters:
       - description: JWT token
         in: header
@@ -142,6 +257,14 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/errs.ErrResponce'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errs.ErrResponce'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/errs.ErrResponce'
         "404":
           description: Not Found
           schema:
@@ -151,7 +274,7 @@ paths:
       - users
   /users/me:
     get:
-      description: gets user from "subject" field in JWT token
+      description: Gets user from "subject" field in JWT token
       parameters:
       - description: JWT token
         in: header
@@ -165,6 +288,14 @@ paths:
           description: Created
           schema:
             $ref: '#/definitions/userhandler.User'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errs.ErrResponce'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/errs.ErrResponce'
         "404":
           description: Not Found
           schema:

@@ -17,7 +17,7 @@ const docTemplate = `{
     "paths": {
         "/auth/login": {
             "post": {
-                "description": "logins user",
+                "description": "Logins user",
                 "consumes": [
                     "application/json"
                 ],
@@ -67,9 +67,156 @@ const docTemplate = `{
                 }
             }
         },
+        "/topics": {
+            "get": {
+                "description": "Gets topics",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "topics"
+                ],
+                "summary": "Get topics",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "creator's uuid",
+                        "name": "created_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "topic's title",
+                        "name": "title",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/topichandler.Topic"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/errs.ErrResponce"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Creates new topic",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "topics"
+                ],
+                "summary": "Create topic",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "JWT token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Create topic request body",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/topichandler.NewTopic"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/topichandler.Topic"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/errs.ErrResponce"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/errs.ErrResponce"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/errs.ErrResponce"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/errs.ErrResponce"
+                        }
+                    }
+                }
+            }
+        },
+        "/topics/{topicID}": {
+            "get": {
+                "description": "Gets topic by id",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "topics"
+                ],
+                "summary": "Get topic by id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Topic id",
+                        "name": "topicID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/topichandler.Topic"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/errs.ErrResponce"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/errs.ErrResponce"
+                        }
+                    }
+                }
+            }
+        },
         "/users": {
             "post": {
-                "description": "creates new user",
+                "description": "Creates new user",
                 "consumes": [
                     "application/json"
                 ],
@@ -115,7 +262,7 @@ const docTemplate = `{
         },
         "/users/me": {
             "get": {
-                "description": "gets user from \"subject\" field in JWT token",
+                "description": "Gets user from \"subject\" field in JWT token",
                 "produces": [
                     "application/json"
                 ],
@@ -139,6 +286,18 @@ const docTemplate = `{
                             "$ref": "#/definitions/userhandler.User"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/errs.ErrResponce"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/errs.ErrResponce"
+                        }
+                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
@@ -150,7 +309,7 @@ const docTemplate = `{
         },
         "/users/{userID}": {
             "get": {
-                "description": "gets user by id",
+                "description": "Gets user by id",
                 "produces": [
                     "application/json"
                 ],
@@ -187,6 +346,18 @@ const docTemplate = `{
                             "$ref": "#/definitions/errs.ErrResponce"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/errs.ErrResponce"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/errs.ErrResponce"
+                        }
+                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
@@ -213,6 +384,34 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "topichandler.NewTopic": {
+            "type": "object",
+            "properties": {
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "topichandler.Topic": {
+            "type": "object",
+            "properties": {
+                "created_by": {
+                    "type": "string"
+                },
+                "date_created": {
+                    "type": "string"
+                },
+                "date_updated": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "title": {
                     "type": "string"
                 }
             }

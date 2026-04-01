@@ -74,6 +74,8 @@ func (h Handler) Create(c fiber.Ctx) error {
 // @Produce json
 // @Success 200 {object} User
 // @Failure 400 {object} errs.ErrResponce
+// @Failure 401 {object} errs.ErrResponce
+// @Failure 403 {object} errs.ErrResponce
 // @Failure 404 {object} errs.ErrResponce
 // @Router /users/{userID} [get]
 func (h Handler) GetUserByID(c fiber.Ctx) error {
@@ -103,6 +105,8 @@ func (h Handler) GetUserByID(c fiber.Ctx) error {
 // @Param Authorization header string true "JWT token"
 // @Produce json
 // @Success 201 {object} User
+// @Failure 401 {object} errs.ErrResponce
+// @Failure 403 {object} errs.ErrResponce
 // @Failure 404 {object} errs.ErrResponce
 // @Router /users/me [get]
 func (h Handler) GetMe(c fiber.Ctx) error {
