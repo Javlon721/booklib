@@ -1,9 +1,13 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"log/slog"
 	"os"
+	"os/signal"
 	"path"
+	"syscall"
 	"time"
 
 	authbus "github.com/Javlon721/booklib/internal/bus/authBus"
@@ -34,7 +38,8 @@ import (
 )
 
 var (
-	apiHost = ":8001"
+	apiHost       = ":8001"
+	shutdownTimer = time.Second * 15
 )
 
 // @title Booklib API
@@ -177,5 +182,39 @@ func run(logger *slog.Logger) error {
 
 	chatWsHandler.Routes(appV1, chatBus, logger, authMid)
 
-	return app.Listen(apiHost)
+	// -------------------------------------------------------------------------
+	// Start API Service
+
+	logger.Info("startup", "status", "initializing V1 API support")
+
+	shutdown, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+
+	defer stop()
+
+	serverErrors := make(chan error, 1)
+
+	go func() {
+		logger.Info("startup", "status", "api router started", "host", apiHost)
+		serverErrors <- app.Listen(apiHost)
+	}()
+
+	select {
+	case err = <-serverErrors:
+		return fmt.Errorf("server error: %w", err)
+	case <-shutdown.Done():
+		logger.Info("shutdown", "status", "statring")
+
+		stop()
+
+		ctx, cancel := context.WithTimeout(context.Background(), shutdownTimer)
+		defer cancel()
+
+		if err := app.ShutdownWithContext(ctx); err != nil {
+			return fmt.Errorf("could not stop server gracefully: %w", err)
+		}
+
+		logger.Info("shutdown", "status", "BYE!")
+	}
+
+	return nil
 }
