@@ -127,3 +127,56 @@ func (h Handler) GetMe(c fiber.Ctx) error {
 
 	return c.JSON(toHandlerUser(user))
 }
+
+// Update
+//
+// @Summary Update current user
+// @Description Updates user from "subject" field in JWT token
+// @Tags users
+// @Param Authorization header string true "JWT token"
+// @Param request body UpdateUser true "Update user request body"
+// @Produce json
+// @Success 200 {object} User
+// @Failure 401 {object} errs.ErrResponce
+// @Failure 403 {object} errs.ErrResponce
+// @Failure 404 {object} errs.ErrResponce
+// @Router /users [put]
+func (h Handler) Update(c fiber.Ctx) error {
+	var uu UpdateUser
+
+	if err := c.Bind().Body(&uu); err != nil {
+		return errs.New(errs.InvalidArgument, err)
+	}
+
+	busUpdateUser, err := toBusUpdateUser(uu)
+
+	if err != nil {
+		return errs.New(errs.InvalidArgument, fmt.Errorf("cannot parse user: %w", err))
+	}
+
+	ctx := c.Context()
+
+	userID, err := middleware.GetUserID(ctx)
+	if err != nil {
+		return err
+	}
+
+	user, err := h.userBus.GetUserByID(ctx, userID)
+	if err != nil {
+		if errors.Is(err, userbus.ErrUserNotFound) {
+			return errs.New(errs.NotFound, userbus.ErrUserNotFound)
+		}
+		return errs.New(errs.Internal, err)
+	}
+
+	user, err = h.userBus.Update(ctx, user, busUpdateUser)
+
+	if err != nil {
+		if errors.Is(err, userbus.ErrUserAlreadyExists) {
+			return errs.New(errs.AlreadyExists, userbus.ErrUserAlreadyExists)
+		}
+		return errs.New(errs.Internal, err)
+	}
+
+	return c.JSON(toHandlerUser(user))
+}

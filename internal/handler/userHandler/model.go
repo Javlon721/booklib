@@ -87,3 +87,83 @@ func toBusUser(u NewUser) (userbus.CreateUser, error) {
 		Roles:     roles,
 	}, nil
 }
+
+// -------------------------------------------------------------------------
+type UpdateUser struct {
+	FirstName *string  `json:"first_name"`
+	LastName  *string  `json:"last_name,omitempty"`
+	Email     *string  `json:"email"`
+	Password  *string  `json:"password"`
+	Roles     []string `json:"roles"`
+}
+
+func toBusUpdateUser(u UpdateUser) (userbus.UpdateUser, error) {
+	var errors errs.FieldErrors
+
+	var firstName *name.Name
+
+	if u.FirstName != nil {
+		fName, err := name.Parse(*u.FirstName)
+		if err != nil {
+			errors.Add("first_name", err)
+		}
+
+		firstName = &fName
+	}
+
+	var lastName *name.Name
+
+	if u.LastName != nil {
+		lName, err := name.Parse(*u.LastName)
+		if err != nil {
+			errors.Add("last_name", err)
+		}
+
+		lastName = &lName
+	}
+
+	var pass *password.Password
+
+	if u.Password != nil {
+		ps, err := password.Parse(*u.Password)
+		if err != nil {
+			errors.Add("password", err)
+		}
+
+		pass = &ps
+	}
+
+	var email *mail.Address
+
+	if u.Email != nil {
+		addr, err := mail.ParseAddress(*u.Email)
+		if err != nil {
+			errors.Add("email", err)
+		}
+
+		email = addr
+	}
+
+	var roles []role.Role
+
+	if u.Roles != nil {
+		r, err := role.ParseMany(u.Roles)
+		if err != nil {
+			errors.Add("roles", err)
+		}
+
+		roles = r
+	}
+
+	if len(errors) > 0 {
+		return userbus.UpdateUser{}, fmt.Errorf("validate: %w", errors.ToError())
+	}
+
+	return userbus.UpdateUser{
+		FirstName: firstName,
+		LastName:  lastName,
+		Password:  pass,
+		Email:     email,
+		Roles:     roles,
+	}, nil
+}

@@ -77,8 +77,6 @@ func (s Store) Create(ctx context.Context, nu userbus.User) (uuid.UUID, error) {
 
 	dbUser := toDBUser(nu)
 
-	s.logger.Info("create user", "roles", dbUser.Roles)
-
 	row := s.db.QueryRow(ctx, q, dbUser.FirstName, dbUser.LastName, dbUser.Email, dbUser.PasswordHash, dbUser.DateCreated, dbUser.DateUpdated, dbUser.Roles)
 
 	if err := sqldb.ExtractPosgreErr(row.Scan(&id)); err != nil {
@@ -89,4 +87,33 @@ func (s Store) Create(ctx context.Context, nu userbus.User) (uuid.UUID, error) {
 	}
 
 	return id, nil
+}
+
+func (s Store) Update(ctx context.Context, uu userbus.User) error {
+	const q = `
+	UPDATE users 
+	SET
+		first_name = $1, 
+		last_name = $2, 
+		email = $3, 
+		hash_password = $4, 
+		date_updated = $5, 
+		roles = $6
+	WHERE
+		user_id = $7`
+
+	dbUser := toDBUser(uu)
+
+	tag, err := s.db.Exec(ctx, q, dbUser.FirstName, dbUser.LastName, dbUser.Email, dbUser.PasswordHash, dbUser.DateUpdated, dbUser.Roles, uu.ID)
+
+	s.logger.Info("store: update user", "tag", tag)
+
+	if err := sqldb.ExtractPosgreErr(err); err != nil {
+		if errors.Is(err, sqldb.ErrDBDuplicatedEntry) {
+			return userbus.ErrUserAlreadyExists
+		}
+		return err
+	}
+
+	return nil
 }

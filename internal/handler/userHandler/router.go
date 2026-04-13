@@ -25,4 +25,5 @@ func Routes(
 	router.Post("/", userHandler.Create)
 	router.Get("/me", authMid, userHandler.GetMe)
 	router.Get("/:userID", authMid, authorizeAdmin, userHandler.GetUserByID)
+	router.Put("/", authMid, userHandler.Update)
 }

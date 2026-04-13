@@ -134,6 +134,21 @@ definitions:
           type: string
         type: array
     type: object
+  userhandler.UpdateUser:
+    properties:
+      email:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      password:
+        type: string
+      roles:
+        items:
+          type: string
+        type: array
+    type: object
   userhandler.User:
     properties:
       date_created:
@@ -525,6 +540,42 @@ paths:
       summary: Create user
       tags:
       - users
+    put:
+      description: Updates user from "subject" field in JWT token
+      parameters:
+      - description: JWT token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Update user request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/userhandler.UpdateUser'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/userhandler.User'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errs.ErrResponce'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/errs.ErrResponce'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/errs.ErrResponce'
+      summary: Update current user
+      tags:
+      - users
   /users/{userID}:
     get:
       description: Gets user by id
@@ -600,14 +651,14 @@ paths:
     get:
       description: Websocket connection for chating
       parameters:
-      - description: Chat uuid
-        in: path
-        name: chatID
-        required: true
-        type: string
       - description: JWT token
         in: header
         name: Authorization
+        required: true
+        type: string
+      - description: Chat uuid
+        in: path
+        name: chatID
         required: true
         type: string
       produces:
@@ -619,6 +670,10 @@ paths:
             type: string
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/errs.ErrResponce'
+        "426":
+          description: Upgrade Required
           schema:
             $ref: '#/definitions/errs.ErrResponce'
       summary: Websocket connection

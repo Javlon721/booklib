@@ -20,6 +20,7 @@ type Store interface {
 	Create(context.Context, User) (uuid.UUID, error)
 	GetUserByID(context.Context, uuid.UUID) (User, error)
 	GetUserByEmail(context.Context, string) (User, error)
+	Update(context.Context, User) error
 }
 
 type Business struct {
@@ -70,4 +71,43 @@ func (bus Business) GetUserByID(ctx context.Context, userID uuid.UUID) (User, er
 
 func (bus Business) GetUserByEmail(ctx context.Context, email string) (User, error) {
 	return bus.store.GetUserByEmail(ctx, email)
+}
+func (bus Business) Update(ctx context.Context, usr User, uu UpdateUser) (User, error) {
+	bus.logger.Info("bus", "updateUser", uu)
+
+	if uu.FirstName != nil {
+		usr.FirstName = *uu.FirstName
+	}
+
+	if uu.LastName != nil {
+		usr.LastName = *uu.LastName
+	}
+
+	if uu.Email != nil {
+		usr.Email = *uu.Email
+	}
+
+	if uu.Password != nil {
+		passwordHash, err := bcrypt.GenerateFromPassword([]byte(uu.Password.String()), bcrypt.DefaultCost)
+
+		if err != nil {
+			return User{}, fmt.Errorf("generatefrompassword: %w", err)
+		}
+
+		usr.PasswordHash = passwordHash
+	}
+
+	if uu.Roles != nil {
+		usr.Roles = uu.Roles
+	}
+
+	usr.DateUpdated = time.Now()
+
+	err := bus.store.Update(ctx, usr)
+
+	if err != nil {
+		return User{}, err
+	}
+
+	return usr, nil
 }

@@ -28,3 +28,11 @@ type User struct {
 	DateUpdated  time.Time
 	Roles        []role.Role
 }
+
+type UpdateUser struct {
+	FirstName *name.Name
+	LastName  *name.Name
+	Email     *mail.Address
+	Password  *password.Password
+	Roles     []role.Role
+}
