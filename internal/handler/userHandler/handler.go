@@ -161,6 +161,7 @@ func (h Handler) Update(c fiber.Ctx) error {
 		return err
 	}
 
+	// todo: its happening twice, in auth and here
 	user, err := h.userBus.GetUserByID(ctx, userID)
 	if err != nil {
 		if errors.Is(err, userbus.ErrUserNotFound) {
